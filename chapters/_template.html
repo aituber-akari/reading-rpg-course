@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 【差し替え】章番号と題名 -->
+  <title>第2章 障害を乗り越える｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="技能・装備・環境によって利用可能な行動が変わる障害突破シミュレータを作る。">
+  <link rel="prev" href="ch01.html">
+  <link rel="next" href="ch03.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<!--
+  章ページの雛形。
+  - 【差し替え】と書いた箇所を章ごとに書き換える。
+  - 全体目次では、この章の <a> に aria-current="page" を付ける。
+  - 未公開の章は <span class="is-pending"> にする（リンクにしない）。
+  - 8つの節（.step）は仕様書7.2の順に並べ、id は固定（goal, start, exercise, knowledge, check, test, solution, review）。
+-->
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <!-- 全体目次：スマートフォンでは折りたたみ、56em以上で常時表示 -->
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="ch00.html">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="../parts/part1.html">第1部の概要</a></li>
+            <li><a href="ch01.html">第1章 戦闘する冒険者</a></li>
+            <li><a href="ch02.html" aria-current="page">第2章 障害を乗り越える</a></li>
+            <li><a href="ch03.html">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="../references/affordance.html">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <!-- 章内目次：75em以上で右に固定、それ未満は折りたたみ -->
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>この章の内容</summary>
+    <nav class="drawer-body" aria-label="この章の内容">
+      <p class="nav-heading">この章の内容</p>
+      <ol class="toc-list">
+        <li><a href="#goal">1. 今回作るもの</a></li>
+        <li><a href="#start">2. 出発点</a></li>
+        <li><a href="#exercise">3. 演習</a></li>
+        <li><a href="#knowledge">4. 必要な知識</a></li>
+        <li><a href="#column">文献コラム</a></li>
+        <li><a href="#check">5. 動作確認</a></li>
+        <li><a href="#test">6. テスト</a></li>
+        <li><a href="#solution">7. 完成版コード</a></li>
+        <li><a href="#review">8. 振り返り</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li><a href="../parts/part1.html">第1部 一瞬の行動</a></li>
+          <li aria-current="page">第2章 障害を乗り越える</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header">
+        <p class="eyebrow">第1部 一瞬の行動 ／ 第2章</p>
+        <h1>障害を乗り越える</h1>
+        <p class="lead">【ダミー】同じ崖の前に立っても、登攀の技能がある人、ロープを持つ人、蔦を見つけた人では、取れる行動が違う。この章では、その違いをデータとして表す。</p>
+        <ul class="meta-list" aria-label="この章の概要">
+          <li>目安 2〜3時間</li>
+          <li>TypeScript：Set、型の合成</li>
+          <li>Git：ブランチ</li>
+        </ul>
+      </header>
+
+      <div class="chapter-body">
+
+        <!-- 1. 今回作るもの -->
+        <section class="step" id="goal">
+          <h2>今回作るもの</h2>
+          <p>【ダミー】技能・所持品・環境の組合せから、実行できる行動の一覧を求めるプログラムを作る。完成すると、次のようなログが出る。</p>
+
+          <!-- 出力例は完成版の README から同期する（docs/design/snippets.md）。中身は手で直さない -->
+          <!-- output:ch02 -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>完成版の出力例</small></figcaption>
+<pre>【崖のふもと】ミラは高さ8メートルの崖を見上げた。
+ミラの登攀 2 ／ 必要な登攀 3 —— 直接は登れない。
+ミラは岩の割れ目に倒木が挟まっているのに気づいた。
+ロープを倒木に結ぶ。（体力 18 → 16）
+ロープを伝って崖を登った。（体力 16 → 12）
+【崖の上】ミラは谷の向こうに煙の上がる村を見た。</pre>
+          </figure>
+          <!-- /output -->
+
+          <p>期待される動作：</p>
+          <ul>
+            <li>登攀の技能が足りれば、直接登る行動が候補に入る。</li>
+            <li>ロープと固定点の両方があれば、ロープを使う行動が候補に入る。</li>
+          </ul>
+        </section>
+
+        <!-- 2. 出発点 -->
+        <section class="step" id="start">
+          <h2>出発点</h2>
+          <p>【ダミー】第1章の完成版から始める。前章との差分は次のとおり。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>変更</th><th>内容</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/actions.ts</code></td><td>新規</td><td>行動の定義（前提条件・効果・コスト）</td></tr>
+                <tr><td><code>src/world.ts</code></td><td>変更</td><td>環境に「固定点」「蔦」を追加</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>cp -r examples/ch02/starter my-ch02 &amp;&amp; cd my-ch02 &amp;&amp; npm install</code></pre>
+          </figure>
+        </section>
+
+        <!-- 3. 演習 -->
+        <section class="step" id="exercise">
+          <h2>演習</h2>
+          <p>【ダミー】動作例を見る → サンプルを改造する → 機能を自力で追加する → 完成版と照合する、の順に進める。</p>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 2-1 行動の前提条件を書く</p>
+            <p class="files">編集するファイル：<code>src/actions.ts</code></p>
+            <p>【ダミー】「ロープで登る」行動に、ロープの所持と固定点の存在という2つの前提条件を加える。使う構文は<a href="#knowledge">必要な知識</a>を参照。</p>
+            <!-- コード片は完成版から同期する。ソース側に // #region 名前 〜 // #endregion を置く -->
+            <!-- snippet:examples/ch02/solution/src/actions.ts#climbWithRope -->
+            <figure class="code">
+              <figcaption>src/actions.ts</figcaption>
+<pre><code>export const climbWithRope: Action = {
+  id: "climb-with-rope",
+  // 前提条件：ロープを持ち、固定点がある
+  requires: (s) =&gt; s.items.has("rope") &amp;&amp; s.place.features.has("anchor"),
+  effect: (s) =&gt; ({ ...s, position: "cliff-top", stamina: s.stamina - 4 }),
+  cost: 4,
+};</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 2-2 実行できる行動を列挙する</p>
+            <p>【ダミー】状態を受け取り、前提条件を満たす行動だけを返す関数 <code>availableActions</code> を書く。</p>
+          </div>
+
+          <div class="callout is-note">
+            <p class="box-label">注意</p>
+            <p>【ダミー】<code>Set</code> を <code>JSON.stringify</code> すると空のオブジェクトになる。ログに出すときは配列に変換すること。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 2-A 新しい解決法を足す</p>
+            <p>【ダミー】「魔法で浮く」行動を追加し、技能の組合せによって新しい突破手段が現れることを確かめる。必須ではない。</p>
+          </div>
+        </section>
+
+        <!-- 4. 必要な知識 -->
+        <section class="step" id="knowledge">
+          <h2>必要な知識</h2>
+          <div class="knowledge">
+            <p class="box-label">Set：重複のない集まり</p>
+            <p>【ダミー】所持品や地形の特徴のように、「あるか、ないか」だけを問う集まりには <code>Set</code> を使う。</p>
+            <figure class="code">
+<pre><code>const items = new Set(["rope", "torch"]);
+items.has("rope");   // true
+items.has("staff");  // false</code></pre>
+            </figure>
+          </div>
+        </section>
+
+        <!-- 文献コラム（8要素の外。章に応じて位置を変えてよい） -->
+        <aside class="literature" id="column" aria-labelledby="column-title">
+          <p class="box-label">文献コラム</p>
+          <h3 id="column-title">アフォーダンス理論との対応</h3>
+          <p>【ダミー】ギブソンは、環境が動物に提供する行為の可能性をアフォーダンスと呼んだ。この章のデータ構造は、その一部を次のように写し取っている。</p>
+          <div class="mapping-head" aria-hidden="true"><span>理論の概念</span><span>この章の実装</span></div>
+          <dl class="mapping">
+            <div><dt>アフォーダンス</dt><dd>前提条件を満たした行動（<code>availableActions</code> の戻り値）</dd></div>
+            <div><dt>環境の性質</dt><dd>地点の特徴の集合（<code>place.features</code>）</dd></div>
+            <div><dt>行為者の能力</dt><dd>技能レベルと所持品（<code>skills</code>、<code>items</code>）</dd></div>
+          </dl>
+          <p>【ダミー】ただし、ここでは行為の可能性をあらかじめ列挙しており、知覚による発見は扱っていない。この違いは第5章以降で再び取り上げる。</p>
+          <p class="ref">参考：Gibson, J. J. (1979). <i>The Ecological Approach to Visual Perception</i>. Houghton Mifflin.</p>
+        </aside>
+
+        <!-- 5. 動作確認 -->
+        <section class="step" id="check">
+          <h2>動作確認</h2>
+          <ol>
+            <li>【ダミー】<code>npm run dev</code> を実行する。</li>
+            <li>所持品からロープを外して、もう一度実行する。</li>
+          </ol>
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>ロープを持たない場合の期待ログ</small></figcaption>
+            <ol class="log-lines">
+              <li>【崖のふもと】ミラは崖を見上げた。</li>
+              <li>実行できる行動：<em>引き返す</em></li>
+              <li>ミラは来た道を戻った。</li>
+            </ol>
+          </figure>
+          <p>確認する観点：持ち物を変えたとき、候補の行動が変わること。</p>
+        </section>
+
+        <!-- 6. テスト -->
+        <section class="step" id="test">
+          <h2>テスト</h2>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>npm test</code></pre>
+          </figure>
+          <ul>
+            <li>【ダミー】技能が足りないとき、直接登る行動が候補に含まれない。</li>
+            <li>ロープと固定点がそろったときだけ、ロープを使う行動が候補に含まれる。</li>
+          </ul>
+        </section>
+
+        <!-- 7. 完成版コード -->
+        <section class="step" id="solution">
+          <h2>完成版コード</h2>
+          <p>【ダミー】<a href="../examples/ch02/solution/">examples/ch02/solution/</a> に章の最終状態がある。README の手順で起動できる。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/actions.ts</code></td><td>行動の定義</td></tr>
+                <tr><td><code>src/affordance.ts</code></td><td>実行できる行動の判定</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 8. 振り返り -->
+        <section class="step" id="review">
+          <h2>振り返り</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ゲーム上の機能</th><th>習得した技術</th></tr></thead>
+              <tbody>
+                <tr><td>【ダミー】持ち物で変わる行動候補</td><td><code>Set</code>、述語関数</td></tr>
+                <tr><td>行動の定義と判定の分離</td><td>ルールとデータの分離</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 前後の章：rel="prev" / rel="next" は ← → キー移動にも使う -->
+      <nav class="pager" aria-label="前後の章">
+        <a class="prev" href="ch01.html" rel="prev"><span class="dir">← 前の章</span>第1章 戦闘する冒険者</a>
+        <a class="next" href="ch03.html" rel="next"><span class="dir">次の章 →</span>第3章 機転を利かせる</a>
+      </nav>
+      <p class="pager-hint"><kbd>←</kbd> <kbd>→</kbd> キーでも前後の章へ移動できます</p>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

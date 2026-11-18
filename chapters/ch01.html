@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第1章 戦闘する冒険者｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="攻撃・防御・逃走を選ぶ1対1の戦闘シミュレータを作る。条件分岐の整理、関数分割、型による状態管理、固定シードの乱数、単体テスト。">
+  <link rel="prev" href="ch00.html">
+  <link rel="next" href="ch02.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<!-- コード片と出力例は完成版から同期する（docs/design/snippets.md）。目印の中身は手で直さない。 -->
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="ch00.html">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="../parts/part1.html">第1部の概要</a></li>
+            <li><a href="ch01.html" aria-current="page">第1章 戦闘する冒険者</a></li>
+            <li><a href="ch02.html">第2章 障害を乗り越える</a></li>
+            <li><a href="ch03.html">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="../references/affordance.html">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>この章の内容</summary>
+    <nav class="drawer-body" aria-label="この章の内容">
+      <p class="nav-heading">この章の内容</p>
+      <ol class="toc-list">
+        <li><a href="#goal">1. 今回作るもの</a></li>
+        <li><a href="#start">2. 出発点</a></li>
+        <li><a href="#exercise">3. 演習</a></li>
+        <li><a href="#knowledge">4. 必要な知識</a></li>
+        <li><a href="#column">文献コラム</a></li>
+        <li><a href="#check">5. 動作確認</a></li>
+        <li><a href="#test">6. テスト</a></li>
+        <li><a href="#solution">7. 完成版コード</a></li>
+        <li><a href="#review">8. 振り返り</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li><a href="../parts/part1.html">第1部 一瞬の行動</a></li>
+          <li aria-current="page">第1章 戦闘する冒険者</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header">
+        <p class="eyebrow">第1部 一瞬の行動 ／ 第1章</p>
+        <h1>戦闘する冒険者</h1>
+        <p class="lead">草原でアリアの前に灰色オオカミが現れる。攻撃するか、身を守るか、逃げるか。毎ラウンドの行動を選ぶ「方策」を差し替えると、同じ戦いの結末が変わる。乱数にシードを与えて、偶然の要素も再現できるようにする。</p>
+        <ul class="meta-list" aria-label="この章の概要">
+          <li>目安 3〜4時間</li>
+          <li>TypeScript：関数分割、型による状態管理、関数を値として渡す</li>
+          <li>テスト：単体テスト、固定値の乱数、スナップショット</li>
+          <li>Git：ブランチ</li>
+        </ul>
+      </header>
+
+      <div class="chapter-body">
+
+        <!-- 1. 今回作るもの -->
+        <section class="step" id="goal">
+          <h2>今回作るもの</h2>
+          <p>攻撃・防御・逃走を選ぶ1対1の戦闘シミュレータ。主人公の方策とシードを引数で切り替えられる。完成版を引数なしで動かすと、次のように表示される。</p>
+
+          <!-- output:ch01 -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>完成版の出力（npm start：シード42、方策 cautious）</small></figcaption>
+<pre># seed: 42 / policy: cautious / 敵の方策: aggressive
+アリア（HP 20）の前に、灰色オオカミ（HP 14）が立ちはだかった！
+[1] 灰色オオカミの攻撃！ アリアに3のダメージ。（HP 20→17）
+[2] アリアの攻撃！ 灰色オオカミに5のダメージ。（HP 14→9）
+[3] 灰色オオカミの攻撃！ アリアに4のダメージ。（HP 17→13）
+[4] アリアの攻撃！ 灰色オオカミに6のダメージ。（HP 9→3）
+[5] 灰色オオカミの攻撃！ アリアに2のダメージ。（HP 13→11）
+[6] アリアの攻撃！ 灰色オオカミに3のダメージ。（HP 3→0）
+[6] 灰色オオカミは倒れた。
+== 戦闘終了：勝利 ==
+アリア HP 11/20　灰色オオカミ HP 0/14</pre>
+          </figure>
+          <!-- /output -->
+
+          <p>期待される動作：</p>
+          <ul>
+            <li>毎ラウンド、両者が行動を宣言し、素早さ（<code>agi</code>）の高い順に解決する。防御はそのラウンドの最初から効く。</li>
+            <li>HPが0になった側は「倒れた」状態になり、戦闘が終わる。逃げ切った場合も終わる。20ラウンドで決着しなければ引き分け。</li>
+            <li>同じシード・同じ方策なら、何度実行しても同じログになる。</li>
+          </ul>
+          <p>この章の完成条件は、<strong>同じ戦闘状況で、選ばれた行動によって結果が変わる</strong>こと。</p>
+        </section>
+
+        <!-- 2. 出発点 -->
+        <section class="step" id="start">
+          <h2>出発点</h2>
+          <p>序章の完成版を広げる。ファイルが増えるので、この章の演習用コード（starter）を新しい作業場所に写して始める。乱数生成器（<code>src/lib/rng.ts</code>）は完成品が入っている。</p>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>cp -r reading-rpg-course/examples/ch01/starter ~/reading-rpg-ch01
+cd ~/reading-rpg-ch01
+npm ci
+echo "node_modules/" &gt; .gitignore
+git init &amp;&amp; git add . &amp;&amp; git commit -m "第1章の演習用コードから始める"</code></pre>
+          </figure>
+          <p>序章からの主な変更（記号：+ 追加／~ 変更／&gt; 移動）：</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th class="nowrap">記号</th><th>ファイル</th><th>内容</th></tr></thead>
+              <tbody>
+                <tr><td>+</td><td><code>src/lib/rng.ts</code></td><td>シード付きの乱数生成器 <code>createRng</code></td></tr>
+                <tr><td>~</td><td><code>src/domain/types.ts</code></td><td>戦闘用パラメータ、人物の <code>kind</code>・<code>state</code>、世界状態、行動、方策、結末</td></tr>
+                <tr><td>+</td><td><code>src/rules/combat.ts</code></td><td>戦闘の規則：<code>damageOf</code>、<code>fleeChance</code>、<code>resolveRound</code></td></tr>
+                <tr><td>+</td><td><code>src/sim/battle.ts</code></td><td>決着までラウンドを繰り返す <code>runBattle</code></td></tr>
+                <tr><td>+</td><td><code>src/sim/policies.ts</code></td><td>方策：<code>aggressive</code>、<code>cautious</code>、<code>coward</code>、<code>retreatAtHalf</code>（<strong>演習</strong>）</td></tr>
+                <tr><td>+</td><td><code>src/content/battle.ts</code></td><td>アリアと灰色オオカミ</td></tr>
+                <tr><td>~</td><td><code>src/narration/format.ts</code></td><td>戦闘の出来事の文</td></tr>
+                <tr><td>~</td><td><code>src/main.ts</code></td><td>引数 <code>--mode</code>、<code>--seed</code>、<code>--policy</code></td></tr>
+                <tr><td>&gt;</td><td><code>src/adventure.ts</code> → <code>src/sim/adventure.ts</code></td><td>倒れたときに <code>state</code> を <code>down</code> にする</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>序章の冒険は <code>npm start -- --mode adventure</code> で引き続き動く。人物の型は次のように広がった。</p>
+          <!-- snippet:examples/ch01/solution/src/domain/types.ts#agent -->
+          <figure class="code">
+            <figcaption>src/domain/types.ts</figcaption>
+<pre><code>/** 戦闘に使うパラメータ。 */
+export interface CombatParams {
+  hp: number;
+  maxHp: number;
+  atk: number;
+  def: number;
+  agi: number;
+}
+
+/** 人物。第1章から kind と state を持つ。 */
+export interface Agent {
+  id: string;
+  kind: 'agent';
+  name: string;
+  state: 'alive' | 'down';
+  params: CombatParams;
+  location: string;
+}</code></pre>
+          </figure>
+          <!-- /snippet -->
+        </section>
+
+        <!-- 3. 演習 -->
+        <section class="step" id="exercise">
+          <h2>演習</h2>
+          <p>戦闘を動かして比べる → 規則を読む → 方策を自分で書く、の順に進める。</p>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 1-1 方策とシードを変えて比べる</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>npm start                                  # シード42、方策 cautious
+npm start -- --policy aggressive           # いつも攻撃
+npm start -- --seed 7 --policy coward      # いつも逃げる
+npm start -- --seed 7 --policy coward      # もう一度。同じログになるか</code></pre>
+            </figure>
+            <p>次の3点をログで確かめる。(1) 同じシード・同じ方策なら同じログになる。(2) シードを変えるとダメージの値が変わる。(3) シード42では <code>cautious</code> と <code>aggressive</code> のログが一致する。3つ目は、アリアのHPが一度も30%（6）以下にならず、<code>cautious</code> が一度も防御を選ばないためである。</p>
+          </div>
+
+          <div class="knowledge" id="k-rng">
+            <p class="box-label">知識：シード付きの乱数</p>
+            <p>コンピュータの乱数の多くは、決まった計算で「乱数らしい」数の列を作る。最初の値（<strong>シード</strong>）が同じなら、同じ列が出てくる。この教材では <code>Math.random</code> を使わず、必ず次の生成器を引数で渡す。こうすると、偶然を含む戦闘でも結果を再現でき、テストでは決めた値を返す偽の生成器に差し替えられる。</p>
+            <!-- snippet:examples/ch01/solution/src/lib/rng.ts#createRng -->
+            <figure class="code">
+              <figcaption>src/lib/rng.ts（中身は読み飛ばしてよい）</figcaption>
+<pre><code>export function createRng(seed: number): Rng {
+  let s = seed &gt;&gt;&gt; 0;
+  const next = (): number =&gt; {
+    s = (s + 0x6d2b79f5) &gt;&gt;&gt; 0;
+    let x = s;
+    x = Math.imul(x ^ (x &gt;&gt;&gt; 15), x | 1);
+    x ^= x + Math.imul(x ^ (x &gt;&gt;&gt; 7), x | 61);
+    return ((x ^ (x &gt;&gt;&gt; 14)) &gt;&gt;&gt; 0) / 4294967296;
+  };
+  return {
+    next,
+    int: (min, max) =&gt; min + Math.floor(next() * (max - min + 1)),
+    snapshot: () =&gt; ({ seed, s }),
+  };
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p><code>int(-1, 1)</code> は −1、0、1 のどれかを返す。ダメージの揺らぎに使う。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 1-2 規則を読み、ログと照らし合わせる</p>
+            <p class="files">読むファイル：<code>src/rules/combat.ts</code></p>
+            <p>ダメージと逃走の規則は次の2つの関数にある。</p>
+            <!-- snippet:examples/ch01/solution/src/rules/combat.ts#damageOf -->
+            <figure class="code">
+              <figcaption>src/rules/combat.ts（ダメージ）</figcaption>
+<pre><code>/** 攻撃のダメージ。揺らぎのために乱数を1回消費する。 */
+export function damageOf(att: Agent, def: Agent, defending: boolean, rng: Rng): number {
+  const base = Math.max(1, att.params.atk - def.params.def + rng.int(-1, 1));
+  return defending ? Math.max(1, Math.floor(base / 2)) : base;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <!-- snippet:examples/ch01/solution/src/rules/combat.ts#fleeChance -->
+            <figure class="code">
+              <figcaption>src/rules/combat.ts（逃走の成功確率）</figcaption>
+<pre><code>/** 逃走の成功確率。0.1〜0.9 の範囲に収める。 */
+export function fleeChance(self: Agent, enemy: Agent): number {
+  const p = 0.5 + 0.1 * (self.params.agi - enemy.params.agi);
+  return Math.min(0.9, Math.max(0.1, p));
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <ol>
+              <li>アリア（攻撃力6）がオオカミ（防御力1）に与えるダメージは、揺らぎを含めて何〜何になるか。オオカミからアリア（防御力2）へはどうか。<a href="#goal">今回作るもの</a>のログの値が、その範囲に入っていることを確かめる。</li>
+              <li>アリア（素早さ5）がオオカミ（素早さ6）から逃げ切る確率を求める。</li>
+            </ol>
+            <details>
+              <summary>答え</summary>
+              <p>アリア→オオカミは 6 − 1 + (−1〜1) で 4〜6、オオカミ→アリアは 5 − 2 + (−1〜1) で 2〜4。逃げ切る確率は 0.5 + 0.1 × (5 − 6) = 0.4。</p>
+            </details>
+          </div>
+
+          <div class="knowledge" id="k-policy">
+            <p class="box-label">知識：関数を値として渡す（方策の型）</p>
+            <p>TypeScriptでは、関数も値として変数に入れたり、引数で渡したりできる。<strong>方策</strong>は「世界状態と自分・相手のIDを受け取り、行動を1つ返す関数」として型を決めてある。</p>
+            <!-- snippet:examples/ch01/solution/src/domain/types.ts#policy -->
+            <figure class="code">
+              <figcaption>src/domain/types.ts</figcaption>
+<pre><code>/** 戦闘で選べる行動。 */
+export type BattleAction = 'attack' | 'defend' | 'flee';
+
+/** 方策：世界状態を見て、自分の行動を1つ選ぶ関数。 */
+export type Policy = (world: WorldState, selfId: string, enemyId: string) =&gt; BattleAction;</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p><code>'attack' | 'defend' | 'flee'</code> は、この3つの文字列のどれかしか入らない型である。<code>(world, selfId) =&gt; …</code> は関数を短く書く形（アロー関数）で、使わない引数は書かなくてよい。手本の <code>cautious</code> は次のとおり。</p>
+            <!-- snippet:examples/ch01/solution/src/sim/policies.ts#cautious -->
+            <figure class="code">
+              <figcaption>src/sim/policies.ts（手本）</figcaption>
+<pre><code>/** 慎重：HPが最大の30%以下なら防御し、それ以外は攻撃する。 */
+export const cautious: Policy = (world, selfId) =&gt; {
+  const self = world.entities[selfId];
+  if (self === undefined) return 'attack';
+  return self.params.hp &lt;= self.params.maxHp * 0.3 ? 'defend' : 'attack';
+};</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p><code>world.entities[selfId]</code> は、見つからなければ <code>undefined</code> になりうる（この教材の設定で、TypeScriptにそう扱わせている）。そのため先に <code>undefined</code> の場合を処理する。</p>
+          </div>
+
+          <div class="knowledge" id="k-branch">
+            <p class="box-label">知識：Gitのブランチ</p>
+            <p>ブランチは、履歴の流れを分けて作業する仕組み。演習用のブランチで試し、うまくいったら元のブランチ（<code>main</code>）に取り込む（マージする）。失敗しても <code>main</code> は汚れない。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 1-3 「HPが半分以下なら逃げる」方策を書く</p>
+            <p class="files">編集するファイル：<code>src/sim/policies.ts</code> の <code>retreatAtHalf</code>（<code>TODO</code>）</p>
+            <p>HPが最大HPの半分<strong>以下</strong>なら <code>'flee'</code>、それ以外は <code>'attack'</code> を返す方策を書く。今は呼ばれると「未実装」のエラーを投げる。</p>
+            <figure class="code is-shell">
+              <figcaption>端末：ブランチを作ってから始める</figcaption>
+<pre><code>git switch -c exercise/retreat-at-half
+npm start -- --policy retreatAtHalf   # 解く前：「未実装：方策 retreatAtHalf」と出る</code></pre>
+            </figure>
+            <p>実装したら、演習用のテストで確かめ、ログでも確かめる。</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>npm run test:exercises
+npm start -- --seed 3 --policy retreatAtHalf</code></pre>
+            </figure>
+            <p>テストが通ったらコミットし、<code>main</code> に取り込む。</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>git add src/sim/policies.ts
+git commit -m "HPが半分以下なら逃げる方策を追加"
+git switch main
+git merge exercise/retreat-at-half</code></pre>
+            </figure>
+            <details>
+              <summary>完成版の実装を見る</summary>
+              <!-- snippet:examples/ch01/solution/src/sim/policies.ts#retreatAtHalf -->
+              <figure class="code">
+                <figcaption>src/sim/policies.ts</figcaption>
+<pre><code>/** 演習：HPが最大の半分以下なら逃げ、それ以外は攻撃する。 */
+export const retreatAtHalf: Policy = (world, selfId) =&gt; {
+  const self = world.entities[selfId];
+  if (self === undefined) return 'attack';
+  return self.params.hp &lt;= self.params.maxHp / 2 ? 'flee' : 'attack';
+};</code></pre>
+              </figure>
+              <!-- /snippet -->
+            </details>
+          </div>
+
+          <div class="callout is-note">
+            <p class="box-label">注意</p>
+            <p>シード42では、アリアのHPが半分（10）以下にならないまま勝つので、<code>retreatAtHalf</code> のログは <code>cautious</code> と同じになる。違いを見るには、<a href="#check">動作確認</a>のようにシード3を使う。「方策が違っても同じ結果になる状況がある」ことも、観察の結果の一つである。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 1-A あと一撃なら逃げない</p>
+            <p>シード3の <code>retreatAtHalf</code> では、オオカミの残りHPが1なのにアリアは逃げる。相手のHPも見て、「自分の最小ダメージで倒せるなら攻撃する」方策を書き、ログを比べる。<code>damageOf</code> の式から最小ダメージを求める関数を作るとよい。完成版には含まれない。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 1-B 敵の方策も選べるようにする</p>
+            <p><code>src/main.ts</code> に引数 <code>--enemy-policy</code> を加え、敵も <code>cautious</code> などにできるようにする。両者が防御を続けると引き分けになることを確かめる。自分のGitHubのリポジトリで、この変更を先にIssueとして書いてから、ブランチを作って進めてみるとよい。完成版には含まれない。</p>
+          </div>
+        </section>
+
+        <!-- 4. 必要な知識 -->
+        <section class="step" id="knowledge">
+          <h2>必要な知識</h2>
+          <p>演習のそばに置いた説明（<a href="#k-rng">シード付きの乱数</a>、<a href="#k-policy">関数を値として渡す</a>、<a href="#k-branch">ブランチ</a>）に加えて、規則の組み立て方とテストの書き方をまとめる。</p>
+
+          <div class="knowledge">
+            <p class="box-label">関数分割：規則・進行・方策・叙述</p>
+            <p>序章では1つのファイルが持っていた役割を、この章で分ける。分けておくと、それぞれを別々にテストでき、差し替えられる。</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>役割</th><th>場所</th><th>知っていること</th></tr></thead>
+                <tbody>
+                  <tr><td>規則</td><td><code>rules/combat.ts</code></td><td>1ラウンドで何が起きるか。乱数は引数で受け取る</td></tr>
+                  <tr><td>進行</td><td><code>sim/battle.ts</code></td><td>決着までラウンドを繰り返すこと</td></tr>
+                  <tr><td>方策</td><td><code>sim/policies.ts</code></td><td>状況を見て行動を選ぶこと</td></tr>
+                  <tr><td>叙述</td><td><code>narration/format.ts</code></td><td>出来事を文にすること。戦闘の規則は知らない</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">型による状態管理と、元を書き換えない更新</p>
+            <p>人物の状態は <code>'alive' | 'down'</code> のどちらかしか取れない。書き間違い（<code>'dead'</code> など）は型チェックで見つかる。<code>resolveRound</code> は最初に <code>structuredClone(world)</code> で世界状態を丸ごと複製し、複製だけを書き換えて返す。元の世界状態が変わらないので、「同じ初期状態から行動だけを変えた3通り」をテストで比べられる。</p>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">単体テストと、決めた値を返す乱数</p>
+            <p>Vitest のテストは <code>describe</code>（まとまり）、<code>it</code>（1つの確認）、<code>expect(実際).toBe(期待)</code> で書く。乱数を使う規則は、決めた値を順に返す偽の生成器 <code>fixedRng</code> でテストする。<code>next()</code> が 0.5 を返すと、<code>int(-1, 1)</code> は 0 になり、揺らぎのないダメージを確かめられる。</p>
+            <!-- snippet:examples/ch01/solution/tests/helpers/fixedRng.ts -->
+            <figure class="code">
+              <figcaption>tests/helpers/fixedRng.ts</figcaption>
+<pre><code>import type { Rng } from '../../src/lib/rng';
+
+/** 決めた値を順に返す乱数生成器（テスト用）。値が尽きたら最後の値を返し続ける。 */
+export function fixedRng(values: number[]): Rng {
+  let i = 0;
+  const next = (): number =&gt; {
+    const v = values[Math.min(i, values.length - 1)] ?? 0;
+    i += 1;
+    return v;
+  };
+  return {
+    next,
+    int: (min, max) =&gt; min + Math.floor(next() * (max - min + 1)),
+    snapshot: () =&gt; ({ seed: -1, s: i }),
+  };
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p>シード42の戦闘全体は<strong>スナップショット</strong>（前回の結果を保存したファイル）と比べる。規則を変えて結果が変わると、テストが知らせる。意図した変更なら <code>npx vitest run -u</code> で更新する。</p>
+          </div>
+        </section>
+
+        <!-- 文献コラム -->
+        <aside class="literature" id="column" aria-labelledby="column-title">
+          <p class="box-label">文献コラム</p>
+          <h3 id="column-title">人物は「多状態の物」である</h3>
+          <p>Pinchbeck（2009）は、ゲームの物を状態とパラメータで記述した。パラメータが閾値に達すると状態が切り替わる。壊れる木箱がその例である。自律して動くagentも、この見方では「AIの付いた多状態の物」になる。この章の人物は、その最小の形をしている。</p>
+          <div class="mapping-head" aria-hidden="true"><span>理論の概念</span><span>この章の実装</span></div>
+          <dl class="mapping">
+            <div><dt>状態</dt><dd><code>state: 'alive' | 'down'</code>。倒れた人物は行動しない</dd></div>
+            <div><dt>パラメータ</dt><dd><code>hp</code>、<code>maxHp</code>、<code>atk</code>、<code>def</code>、<code>agi</code></dd></div>
+            <div><dt>閾値による状態遷移</dt><dd>HPが0以下になると <code>down</code> になる（<code>resolveRound</code> の <code>if</code> 文）</dd></div>
+            <div><dt>入力に応じた選択（SELECT）</dt><dd>方策 <code>Policy</code>。状況を見て行動を1つ選ぶ</dd></div>
+          </dl>
+          <p><strong>この書き方の限界：</strong>この章では「HPが0以下なら倒れる」という規則を、<code>resolveRound</code> の中の <code>if</code> 文として手続き的に書いた。規則がコードの中に埋まっているので、(1) 蔦の強度が0になると切れる、のような別の物に同じ形の規則を使い回せない。(2) 規則をデータとして保存・表示・分析できない。(3) 規則を足すたびに関数を書き換えることになる。</p>
+          <p><strong>第2章への橋渡し：</strong>第2章では、状態の切り替えを「どの状態から、どの状態へ、どの条件で」というデータ（遷移規則）として書く。たとえば蔦は、強度が0以下になると <code>intact</code> から <code>torn</code> に変わる、とデータで宣言する。第5章では、この章の戦闘そのものも宣言的な行為定義に移す。パラメータ名と出来事の形は、そのときも変えない。</p>
+          <p class="ref">参考：Pinchbeck, D. (2009). An affordance based model for gameplay. <i>Proceedings of DiGRA 2009</i>.　詳しくは<a href="../references/affordance.html#literature">設計思想：アフォーダンス</a>。</p>
+        </aside>
+
+        <!-- 5. 動作確認 -->
+        <section class="step" id="check">
+          <h2>動作確認</h2>
+          <ol>
+            <li><code>npm start</code> を2回実行し、まったく同じログになることを確かめる。</li>
+            <li>演習 1-3 の後、<code>npm start -- --seed 3 --policy retreatAtHalf</code> を実行する。</li>
+            <li>同じシードで <code>--policy aggressive</code> も実行し、結末を比べる。</li>
+            <li><code>npm start -- --mode adventure</code> で、序章の冒険が引き続き動くことを確かめる。</li>
+          </ol>
+          <!-- output:ch01#retreat -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>手順2：シード3、方策 retreatAtHalf</small></figcaption>
+<pre># seed: 3 / policy: retreatAtHalf / 敵の方策: aggressive
+アリア（HP 20）の前に、灰色オオカミ（HP 14）が立ちはだかった！
+[1] 灰色オオカミの攻撃！ アリアに4のダメージ。（HP 20→16）
+[2] アリアの攻撃！ 灰色オオカミに4のダメージ。（HP 14→10）
+[3] 灰色オオカミの攻撃！ アリアに3のダメージ。（HP 16→13）
+[4] アリアの攻撃！ 灰色オオカミに4のダメージ。（HP 10→6）
+[5] 灰色オオカミの攻撃！ アリアに4のダメージ。（HP 13→9）
+[6] アリアの攻撃！ 灰色オオカミに5のダメージ。（HP 6→1）
+[7] 灰色オオカミの攻撃！ アリアに3のダメージ。（HP 9→6）
+[8] アリアは灰色オオカミに背を向けて駆け出した……逃げ切った！
+== 戦闘終了：逃走 ==
+アリア HP 6/20　灰色オオカミ HP 1/14</pre>
+          </figure>
+          <!-- /output -->
+          <p>同じシード3でも <code>aggressive</code> なら、アリアは最後まで攻撃し、HP6を残してオオカミを倒す。オオカミの残りHPが1だったことを知っている読み手には、逃げたアリアの判断が惜しく見えるかもしれない。数字と短い文から、読み手はそこまで想像できる。</p>
+          <!-- output:ch01#adventure -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>手順4：序章の冒険（--mode adventure）</small></figcaption>
+<pre>[1] リナは村を出発した。（HP 12）
+[2] リナは森へ移動した。
+[3] リナはスライムに遭遇した！ HP 12→9
+[4] リナは洞窟の入口へ移動した。
+[5] リナは大コウモリに遭遇した！ HP 9→5</pre>
+          </figure>
+          <!-- /output -->
+          <p>確認する観点：</p>
+          <ul>
+            <li>同じシード・同じ方策なら同じログ、方策を変えると結末が変わりうる。</li>
+            <li>HPが半分以下になった直後のラウンドで、アリアが逃走を選んでいる。</li>
+            <li>序章の機能が壊れていない。</li>
+          </ul>
+        </section>
+
+        <!-- 6. テスト -->
+        <section class="step" id="test">
+          <h2>テスト</h2>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>npm test                # 既定のテスト（starter でも通る）
+npm run test:exercises  # 演習用テスト（演習 1-3 を解くまで失敗する）
+npm run check           # 型チェック → テスト</code></pre>
+          </figure>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>テストファイル</th><th>主な確認項目</th></tr></thead>
+              <tbody>
+                <tr><td><code>rng.test.ts</code></td><td>同じシードなら同じ列、違うシードなら違う列。シード42の最初の値が固定されている</td></tr>
+                <tr><td><code>combat.test.ts</code></td><td>揺らぎ0のダメージは「攻撃力−防御力」。防御すると半分（最低1）。逃走確率は0.4。先に動くのはオオカミ。行動だけを変えると3通りの結果がすべて異なる（完成条件）。元の世界状態は変わらない</td></tr>
+                <tr><td><code>battle.test.ts</code></td><td>両者が攻撃し続けると3ラウンドで勝利。両者が防御し続けると20ラウンドで引き分け。シード42の戦闘がスナップショットと一致する</td></tr>
+                <tr><td><code>policies.test.ts</code></td><td>HP 6/20 なら <code>cautious</code> は防御、HP 7/20 なら攻撃</td></tr>
+                <tr><td><code>adventure.test.ts</code></td><td>序章の冒険と「休む」が引き続き動く</td></tr>
+                <tr><td><code>exercises/policy.test.ts</code></td><td>演習：HP 9/20 と 10/20 で <code>flee</code>、15/20 で <code>attack</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 7. 完成版コード -->
+        <section class="step" id="solution">
+          <h2>完成版コード</h2>
+          <p>第1章の最終状態は <a href="https://github.com/aituber-akari/reading-rpg-course/tree/main/examples/ch01/solution">examples/ch01/solution</a> にある。演習 1-3 の解答は <code>src/sim/policies.ts</code> の <code>retreatAtHalf</code> である。</p>
+          <p>主要なファイルの読みどころ：</p>
+          <ul>
+            <li><code>src/rules/combat.ts</code> の <code>resolveRound</code>：1ラウンドの手順。防御を先に処理し、攻撃と逃走を素早さの順に解決する。乱数を消費する順番（攻撃で1回、逃走で1回、防御は0回）も規則の一部である。</li>
+            <li><code>src/sim/battle.ts</code> の <code>runBattle</code>：方策に行動を聞き、<code>resolveRound</code> に渡すことを繰り返すだけの進行役。</li>
+          </ul>
+          <details>
+            <summary>resolveRound の全体を見る</summary>
+            <!-- snippet:examples/ch01/solution/src/rules/combat.ts#resolveRound -->
+            <figure class="code">
+              <figcaption>src/rules/combat.ts</figcaption>
+<pre><code>/**
+ * 1ラウンドを解決する。
+ * 1. 両者の行動はすでに宣言されている（引数で受け取る）。
+ * 2. 防御はラウンドの最初から有効になる。防御のイベントを最初に出す。
+ * 3. 攻撃と逃走を agi の高い順に解決する（同じなら主人公が先）。
+ * 引数の world は書き換えず、新しい世界状態を返す。
+ */
+export function resolveRound(
+  world: WorldState,
+  heroId: string,
+  heroAction: BattleAction,
+  enemyId: string,
+  enemyAction: BattleAction,
+  rng: Rng,
+): { world: WorldState; events: WorldEvent[]; ended: boolean } {
+  const w: WorldState = structuredClone(world);
+  const events: WorldEvent[] = [];
+  const declared: Record&lt;string, BattleAction&gt; = { [heroId]: heroAction, [enemyId]: enemyAction };
+  const opponent: Record&lt;string, string&gt; = { [heroId]: enemyId, [enemyId]: heroId };
+
+  const hero = agentOf(w, heroId);
+  const enemy = agentOf(w, enemyId);
+  const order = hero.params.agi &gt;= enemy.params.agi ? [heroId, enemyId] : [enemyId, heroId];
+
+  // 防御を宣言した側は、ラウンドの最初から身を守る（乱数は消費しない）。
+  for (const id of order) {
+    if (declared[id] === 'defend') {
+      w.t += 1;
+      events.push({ t: w.t, type: 'action', actor: id, action: 'defend' });
+    }
+  }
+
+  for (const id of order) {
+    const action = declared[id];
+    const self = agentOf(w, id);
+    const other = agentOf(w, opponent[id] ?? '');
+    if (self.state === 'down' || action === 'defend') continue;
+
+    w.t += 1;
+    if (action === 'attack') {
+      const dmg = damageOf(self, other, declared[other.id] === 'defend', rng);
+      const change: Change = {
+        entity: other.id,
+        field: 'param',
+        key: 'hp',
+        before: other.params.hp,
+        after: Math.max(0, other.params.hp - dmg),
+      };
+      other.params.hp = change.after;
+      events.push({ t: w.t, type: 'action', actor: id, action: 'attack', target: other.id, changes: [change] });
+      if (other.params.hp &lt;= 0) {
+        other.state = 'down';
+        events.push({ t: w.t, type: 'defeated', actor: other.id });
+        const outcome = other.id === enemyId ? 'victory' : 'defeat';
+        events.push({ t: w.t, type: 'battleEnd', actor: heroId, target: enemyId, outcome });
+        return { world: w, events, ended: true };
+      }
+    } else {
+      const success = rng.next() &lt; fleeChance(self, other);
+      events.push({
+        t: w.t,
+        type: 'action',
+        actor: id,
+        action: 'flee',
+        target: other.id,
+        outcome: success ? 'success' : 'failure',
+      });
+      if (success) {
+        events.push({ t: w.t, type: 'battleEnd', actor: heroId, target: enemyId, outcome: 'fled' });
+        return { world: w, events, ended: true };
+      }
+    }
+  }
+  return { world: w, events, ended: false };
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </details>
+          <!-- snippet:examples/ch01/solution/src/sim/battle.ts#runBattle -->
+          <figure class="code">
+            <figcaption>src/sim/battle.ts</figcaption>
+<pre><code>/**
+ * 決着がつくまでラウンドを繰り返す。
+ * 毎ラウンド、両者の方策が行動を宣言し、resolveRound で解決する。
+ * maxRounds で決着しなければ引き分け（draw）とする。
+ */
+export function runBattle(
+  world: WorldState,
+  heroId: string,
+  enemyId: string,
+  policies: { hero: Policy; enemy: Policy },
+  rng: Rng,
+  maxRounds = 20,
+): { world: WorldState; events: WorldEvent[]; outcome: BattleOutcome } {
+  let w = world;
+  const events: WorldEvent[] = [];
+  for (let round = 1; round &lt;= maxRounds; round++) {
+    const heroAction = policies.hero(w, heroId, enemyId);
+    const enemyAction = policies.enemy(w, enemyId, heroId);
+    const r = resolveRound(w, heroId, heroAction, enemyId, enemyAction, rng);
+    w = r.world;
+    events.push(...r.events);
+    if (r.ended) {
+      const end = r.events.at(-1);
+      const outcome = end?.outcome;
+      if (outcome === 'victory' || outcome === 'defeat' || outcome === 'fled') {
+        return { world: w, events, outcome };
+      }
+    }
+  }
+  events.push({ t: w.t, type: 'battleEnd', actor: heroId, target: enemyId, outcome: 'draw' });
+  return { world: w, events, outcome: 'draw' };
+}</code></pre>
+          </figure>
+          <!-- /snippet -->
+        </section>
+
+        <!-- 8. 振り返り -->
+        <section class="step" id="review">
+          <h2>振り返り</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ゲーム上の機能</th><th>習得した技術</th></tr></thead>
+              <tbody>
+                <tr><td>攻撃・防御・逃走の解決</td><td>条件分岐の整理、関数分割（規則と進行）</td></tr>
+                <tr><td>生きている／倒れた</td><td>文字列の合併型による状態管理</td></tr>
+                <tr><td>方策の差し替え</td><td>関数を値として渡す、関数の型</td></tr>
+                <tr><td>偶然を含む戦闘の再現</td><td>シード付きの乱数、乱数を引数で渡す設計</td></tr>
+                <tr><td>規則が正しいことの確認</td><td>単体テスト、決めた値を返す乱数、スナップショット</td></tr>
+                <tr><td>演習を安全に試す</td><td>Gitのブランチとマージ</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>次の章では、戦う相手ではなく「崖」の前に人物を立たせる。技能・持ち物・環境の組合せで、取れる行動そのものが変わる世界を、データで書く。</p>
+        </section>
+
+      </div>
+
+      <nav class="pager" aria-label="前後の章">
+        <a class="prev" href="ch00.html" rel="prev"><span class="dir">← 前の章</span>序章 最初の冒険を動かす</a>
+        <a class="next" href="ch02.html" rel="next"><span class="dir">次の章 →</span>第2章 障害を乗り越える</a>
+      </nav>
+      <p class="pager-hint"><kbd>←</kbd> <kbd>→</kbd> キーでも前後の章へ移動できます</p>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

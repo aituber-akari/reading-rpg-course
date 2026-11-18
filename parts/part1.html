@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第1部 一瞬の行動｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="第1部の概要。状況に応じて行動・問題解決を行うシミュレータを作りながら、条件分岐、データ構造、探索アルゴリズム、テストを学ぶ。">
+  <link rel="next" href="../chapters/ch01.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<!-- 材料：docs/spec.md 5章（第1部）・9章、docs/design/architecture.md 6章・10章 -->
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="../chapters/ch00.html">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="part1.html" aria-current="page">第1部の概要</a></li>
+            <li><a href="../chapters/ch01.html">第1章 戦闘する冒険者</a></li>
+            <li><a href="../chapters/ch02.html">第2章 障害を乗り越える</a></li>
+            <li><a href="../chapters/ch03.html">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="../references/affordance.html">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>このページの内容</summary>
+    <nav class="drawer-body" aria-label="このページの内容">
+      <p class="nav-heading">このページの内容</p>
+      <ol class="toc-list">
+        <li><a href="#outcome">第1部の成果</a></li>
+        <li><a href="#relation">成果物と学ぶ内容</a></li>
+        <li><a href="#practice">開発の手法</a></li>
+        <li><a href="#growth">コードの育ち方</a></li>
+        <li><a href="#compare">第3章で比べるもの</a></li>
+        <li><a href="#affordance">アフォーダンスとの関係</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li aria-current="page">第1部 一瞬の行動</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header">
+        <p class="eyebrow">第1部 ／ 第1〜4章</p>
+        <h1>一瞬の行動</h1>
+        <p class="lead">状況・技能・装備・環境から行動を選び、問題を解決するキャラクターを作る。戦闘から始め、崖の前で取れる行動を調べ、複数の行動を組み合わせた計画を探し、最後にそれを読めるログにする。</p>
+        <ul class="meta-list" aria-label="第1部の概要">
+          <li>完成物：行動・問題解決のシミュレータ</li>
+          <li>実行：Node.jsのCLI</li>
+          <li>前提：序章の完成版</li>
+        </ul>
+      </header>
+
+      <h2 id="outcome">第1部の成果</h2>
+      <p>第1部を終えると、技能・装備・環境を踏まえて目標に向けて行動するキャラクターの短い場面を、ログとして読めるようになる。第1部だけで観察できるシミュレータとして、次のものが手元に残る。</p>
+      <ul>
+        <li>方策とシードを切り替えて結果を比べられる、1対1の戦闘</li>
+        <li>同じ崖の前で、人物ごとに実行できる行為と、できない理由の一覧</li>
+        <li>同じ目標に対して、探索法ごとの計画・コスト・展開ノード数の比較</li>
+        <li>同じ出来事の列を、詳細と簡潔の2通りで読むログ</li>
+      </ul>
+
+      <figure class="game-log">
+        <figcaption>冒険の記録 <small>第3章の完成版の出力（抜粋）</small></figcaption>
+<pre>[0] アリアはじっくり考えた。鉤縄を使えば、少ない体力で崖上に行けそうだ。（候補3通り・7手・体力7）
+[1] アリアは村から分かれ道へ歩いた。（体力 20→19）
+……
+[6] アリアは鉤縄を投げ、岩の突起に掛けた。（体力 15→14 / 鉤縄：巻かれている→掛かっている）
+[7] アリアは鉤縄を登り、崖上に着いた。（体力 14→13）</pre>
+      </figure>
+
+      <h2 id="relation">成果物と学ぶ内容</h2>
+      <p>各章は前の章の完成版を広げる。章ごとに、作るもの、そのために学ぶ技術、完成したことの確かめ方を対応させる。</p>
+
+      <ol class="relation">
+        <li>
+          <div class="rel-ch"><span class="no">第1章</span><a class="title" href="../chapters/ch01.html">戦闘する冒険者</a></div>
+          <div class="rel-body"><dl>
+            <dt>作るもの</dt><dd>攻撃・防御・逃走を選ぶ1対1の戦闘シミュレータ。結果はイベントログとして出す</dd>
+            <dt>学ぶ技術</dt><dd>条件分岐の整理、関数分割、型による状態管理、固定シードの乱数</dd>
+            <dt>確かめ方</dt><dd>同じ戦闘状況で、選んだ行動によって結果が変わる。シード42で2回実行すると、イベント列が完全に一致する</dd>
+          </dl></div>
+        </li>
+        <li>
+          <div class="rel-ch"><span class="no">第2章</span><a class="title" href="../chapters/ch02.html">障害を乗り越える</a></div>
+          <div class="rel-body"><dl>
+            <dt>作るもの</dt><dd>技能・持ち物・環境によって、実行できる行為が変わる障害突破シミュレータ</dd>
+            <dt>学ぶ技術</dt><dd>データ構造、条件の判定、ルールとデータの分離、不変更新、JSONに保存できるデータ</dd>
+            <dt>確かめ方</dt><dd>同じ崖でも、技能・持ち物・環境の違いで突破手段が変わる。ある人物の行為が、別の人物の行為を可能にする</dd>
+          </dl></div>
+        </li>
+        <li>
+          <div class="rel-ch"><span class="no">第3章</span><a class="title" href="../chapters/ch03.html">機転を利かせる</a></div>
+          <div class="rel-body"><dl>
+            <dt>作るもの</dt><dd>複数の行為を組み合わせて目標に届く計画シミュレータ。別演習としてDPによる資源配分</dd>
+            <dt>学ぶ技術</dt><dd>状態空間、グラフ、BFS、ダイクストラ法、A*、ヒューリスティック、動的計画法</dd>
+            <dt>確かめ方</dt><dd>探索法を切り替え、計画・コスト・展開ノード数を比べられる。解決経路が複数ある例題がある</dd>
+          </dl></div>
+        </li>
+        <li>
+          <div class="rel-ch"><span class="no">第4章（準備中）</span><span class="title">行動を読ませる</span></div>
+          <div class="rel-body"><dl>
+            <dt>作るもの</dt><dd>第1〜3章の内部イベントから、簡潔な日本語のログを作るプログラム</dd>
+            <dt>学ぶ技術</dt><dd>データと表示の分離、イベントモデル、テンプレート文字列、ログ整形</dd>
+            <dt>確かめ方</dt><dd>同じイベント列を、詳細ログと簡潔ログの少なくとも2通りで表示できる</dd>
+          </dl></div>
+        </li>
+      </ol>
+
+      <h2 id="practice">開発の手法</h2>
+      <p>第1部を通して、<strong>Issue、ブランチ、単体テスト、アルゴリズムのテストケース</strong>を扱う。別建ての座学にはせず、その章のゲーム機能を作るために使う。テストは章が進むにつれて次のように増える。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="nowrap">章</th><th>テストで確かめること</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap">第1章</td><td>決まった値を返す乱数でダメージと逃走を確かめる単体テスト。シード42の実行結果のスナップショット</td></tr>
+            <tr><td class="nowrap">第2章</td><td>人物ごとに実行できる行為の集合。JSONに変換して戻しても元と等しいこと。モジュールの依存規則を守っていること</td></tr>
+            <tr><td class="nowrap">第3章</td><td>小さな抽象グラフで、BFSは辺の数が最小、ダイクストラ法は重みの和が最小の経路を返すこと。ヒューリスティックが無矛盾であること。DPと全組合せの結果が一致すること</td></tr>
+            <tr><td class="nowrap">第4章</td><td>同じイベントデータから2種類のログを作れること</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>演習用のテストは <code>tests/exercises/</code> に分けて置く。演習用コード（starter）では既定の実行から外し、課題に取り組むときに実行する。</p>
+
+      <h2 id="growth">コードの育ち方</h2>
+      <p>第1部ではNode.jsのCLIとして動かす。題材そのものがログなので、まず文字で出力し、ブラウザの画面は第13章で作る。モジュールは章ごとに次のように増える。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="nowrap">章</th><th>追加する主なモジュール</th><th>実行の切り替え</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap">第1章</td><td><code>lib/rng</code>（乱数）、<code>rules/combat</code>、<code>sim/battle</code>、<code>sim/policies</code></td><td><code>--seed</code> <code>--policy</code></td></tr>
+            <tr><td class="nowrap">第2章</td><td><code>rules/</code> の条件・効果・遷移・アフォーダンス、<code>content/cliff</code></td><td><code>--mode cliff</code></td></tr>
+            <tr><td class="nowrap">第3章</td><td><code>planner/search</code>（BFS・ダイクストラ法・A*）、<code>planner/allocate</code>（DP）、<code>analysis/routes</code>、<code>sim/executePlan</code></td><td><code>--algo</code> <code>--weight</code> <code>--mode dp</code></td></tr>
+            <tr><td class="nowrap">第4章</td><td><code>narration/</code> の詳細／簡潔の2形式、<code>analysis/pinchbeck</code></td><td><code>--format detail|brief</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout is-note">
+        <p class="box-label">依存の向き</p>
+        <p>依存は <code>domain</code> ← <code>rules</code> ← <code>planner</code> ← <code>sim</code> ← <code>main.ts</code> の一方向とする。<code>planner/search</code> は世界のことを知らず、探索問題のインタフェースだけに依存する。探索法だけを差し替えられるのは、この境界があるためである。第2章から、この規則をテストで確かめる。</p>
+      </div>
+
+      <h2 id="compare">第3章で比べるもの</h2>
+      <p>同じ「崖の谷」の例題（登攀3・体力20のアリアが崖上を目指す）で、探索法によって計画が分かれる。完成版コード（<code>examples/ch03/solution</code>）で確かめた値を示す。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>探索法</th><th>計画</th><th class="nowrap">手数</th><th class="nowrap">体力</th><th>展開ノード</th></tr></thead>
+          <tbody>
+            <tr><td>BFS</td><td>崖を直接登る</td><td>3</td><td>11</td><td>9</td></tr>
+            <tr><td>ダイクストラ法</td><td>鉤縄を取りに行き、掛けて登る</td><td>7</td><td>7</td><td>18</td></tr>
+            <tr><td>A*（重み1）</td><td>ダイクストラ法と同じ</td><td>7</td><td>7</td><td>11</td></tr>
+            <tr><td>A*（重み3）</td><td>蔦をつたい、岩棚から登る</td><td>4</td><td>8</td><td>4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>BFSは手数が最小、ダイクストラ法は体力の消費が最小の計画を返す。A*は同じ最適な計画をより少ない展開で見つけ、重みを上げるとさらに少ない展開で、最適ではない計画になる。展開ノード数は、同点の扱いなど実装の細部に依存する。そのためテストでは、計画とコストは正確な値で、展開ノード数は大小関係で確かめる。</p>
+
+      <h2 id="affordance">アフォーダンスとの関係</h2>
+      <aside class="literature" aria-labelledby="part1-lit">
+        <p class="box-label">文献コラム</p>
+        <h3 id="part1-lit">第1部で扱う概念</h3>
+        <div class="mapping-head" aria-hidden="true"><span>理論の概念</span><span>第1部での実装</span></div>
+        <dl class="mapping">
+          <div><dt>閾値による状態変化</dt><dd>第1章：HPが0以下になると倒れる。まず手続き的なコードで書く</dd></div>
+          <div><dt>能力×環境＝アフォーダンス</dt><dd>第2章：行為定義・人物・環境から、実行できる行為を計算で求める</dd></div>
+          <div><dt>複合アフォーダンス</dt><dd>第3章：目標に届く行為列（計画）。計画を立てること自体を認知的な行為として記録する</dd></div>
+          <div><dt>物語系アフォーダンス</dt><dd>第4章：読み手が解釈を引き出す物としてのログ</dd></div>
+        </dl>
+        <p>詳しくは<a href="../references/affordance.html">設計思想：アフォーダンス</a>を参照。</p>
+      </aside>
+
+      <nav class="pager" aria-label="前後のページ">
+        <a class="prev" href="../index.html" rel="prev"><span class="dir">← 戻る</span>トップページ</a>
+        <a class="next" href="../chapters/ch01.html" rel="next"><span class="dir">最初の章へ →</span>第1章 戦闘する冒険者</a>
+      </nav>
+      <p class="pager-hint"><kbd>←</kbd> <kbd>→</kbd> キーでも移動できます</p>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

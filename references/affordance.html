@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>設計思想：アフォーダンス｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="教材のゲームを貫く設計思想。2本の論文の要点、設計原則P1〜P8、データモデル、章ごとの導入計画、研究用の記録、ログと物語の関係。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<!-- 元の文書：docs/design/affordance-model.md（版0.1）。内容を変えるときは元の文書を先に直すこと。 -->
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="../chapters/ch00.html">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="../parts/part1.html">第1部の概要</a></li>
+            <li><a href="../chapters/ch01.html">第1章 戦闘する冒険者</a></li>
+            <li><a href="../chapters/ch02.html">第2章 障害を乗り越える</a></li>
+            <li><a href="../chapters/ch03.html">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="affordance.html" aria-current="page">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>このページの内容</summary>
+    <nav class="drawer-body" aria-label="このページの内容">
+      <p class="nav-heading">このページの内容</p>
+      <ol class="toc-list">
+        <li><a href="#intro">この資料について</a></li>
+        <li><a href="#literature">1. 文献の要点</a></li>
+        <li><a href="#principles">2. 設計原則 P1〜P8</a></li>
+        <li><a href="#model">3. データモデル</a></li>
+        <li><a href="#plan">4. 章ごとの導入計画</a></li>
+        <li><a href="#research">5. 研究用フック</a></li>
+        <li><a href="#narrative">6. ログと物語</a></li>
+        <li><a href="#open">未決事項と限界</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li>共通資料</li>
+          <li aria-current="page">設計思想：アフォーダンス</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header" id="intro">
+        <p class="eyebrow">共通資料 ／ 設計思想</p>
+        <h1>アフォーダンス</h1>
+        <p class="lead">この教材で作るゲームは、「誰が、どんな環境で、何をできるか」をデータとして書き、そこから行動を計算で求める。その土台にある考え方と、データモデル・章構成・研究用の記録との対応をまとめる。</p>
+        <ul class="meta-list" aria-label="この資料の情報">
+          <li>元の文書：docs/design/affordance-model.md 版0.1</li>
+          <li>対象：序章〜第16章と本番開発</li>
+        </ul>
+      </header>
+
+      <p>アフォーダンスは、教材の一つの章だけで扱う話題ではなく、全体を貫く設計思想として扱う。本番開発では、このモデルが作品データ（人物・物・場所・行為の定義）の構造をほぼ決める。そのため、次の4点を重視する。</p>
+      <ol>
+        <li><strong>概念と型の対応が追える。</strong>論文の概念ごとに、対応する型・フィールド・規則を示す。</li>
+        <li><strong>宣言的である。</strong>前提条件と効果は関数ではなくデータで書き、JSONにそのまま保存できるようにする。</li>
+        <li><strong>段階的に導入できる。</strong>序章〜第3章で入れる部分が、第16章までの拡張と矛盾しない。</li>
+        <li><strong>研究で観察できる。</strong>「機転・奇策」に見える振る舞いを、イベントログからあとで測れる。</li>
+      </ol>
+      <p>同時に、教材として理解できる単純さを優先する。汎用プランニング言語（PDDLなど）の完全な再実装は目指さない。</p>
+
+      <!-- ===== 1. 文献の要点 ===== -->
+      <h2 id="literature">1. 文献の要点</h2>
+      <p>モデルの土台には2本の論文を置く。以下は論文の要約と、このモデルでの対応である。</p>
+
+      <div class="callout is-note">
+        <p class="box-label">読むときの注意</p>
+        <p>両論文は、ゲームのデータ構造を提案するために書かれたものではない。以下の「このモデルでの対応」は<strong>設計上の解釈</strong>であり、論文の主張そのものではない。論文で引用するときは、この区別を保つ。</p>
+      </div>
+
+      <aside class="literature" aria-labelledby="lit-pinchbeck">
+        <p class="box-label">文献1</p>
+        <h3 id="lit-pinchbeck">Pinchbeck（2009）：ゲームプレイのアフォーダンス・モデル</h3>
+        <p class="ref">Pinchbeck, D. (2009). An affordance based model for gameplay. <i>Proceedings of DiGRA 2009</i>.</p>
+        <p><strong>要点：</strong>FPSを中心とするゲームのオブジェクトを「状態」と「パラメータ」で分類した。パラメータが閾値に達すると状態が切り替わる（壊れる木箱）。ゲームプレイ全体は、少数の典型的なアフォーダンスと、それを媒介するパラメータのネットワークとして記述できる。オブジェクトにはゲームプレイ系と物語系の重要度があり、両者のあいだに概念上の区別はないとする。少数の型の組合せから多様な体験が生まれるため、構造的な複雑さは体験される複雑さより小さい。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>論文の概念</th><th>このモデルでの対応</th></tr></thead>
+            <tbody>
+              <tr><td>状態（state）</td><td><code>EntityBase.state</code>、取りうる状態は <code>WorldObject.states</code></td></tr>
+              <tr><td>パラメータ</td><td><code>EntityBase.params</code>（数値の辞書）</td></tr>
+              <tr><td>閾値による状態遷移</td><td><code>WorldObject.transitions</code>。効果の適用後に評価する</td></tr>
+              <tr><td>プリセットへの一括変化</td><td><code>WorldObject.presets</code>（状態に入るときに上書き）</td></tr>
+              <tr><td>1STATE／多状態、static／movable、CTO／FTO</td><td><code>states.length</code> と注釈 <code>objectClass</code>。規則には使わず、分析に使う</td></tr>
+              <tr><td>gameplay／diegetic、重要度、critical</td><td><code>significance.play</code> と <code>significance.story</code> の2軸、各0〜3。3がcritical</td></tr>
+              <tr><td>典型的なアフォーダンス型（C/E、CEP、COwnP など）</td><td>データには書かず、変化の種類から分析時に導く（<a href="#research">5節</a>）</td></tr>
+              <tr><td>agentの知覚（PERCEIVE）と選択（SELECT）</td><td>知覚＝<code>availableAffordances()</code>、選択＝計画器と第5章以降の方策</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </aside>
+
+      <aside class="literature" aria-labelledby="lit-baker">
+        <p class="box-label">文献2</p>
+        <h3 id="lit-baker">Baker &amp; Roberts（2025）：アフォーダンスによるエージェントの複雑さ</h3>
+        <p class="ref">Baker, B. &amp; Roberts, S. (2025). Understanding Agent Complexity Through Affordances. <i>Minds and Machines</i>, 35:51.</p>
+        <p><strong>要点：</strong>エージェントの複雑さを、環境の中で利用できるアフォーダンスの範囲で比べる枠組みを提案した。アフォーダンスは、能力を持つエージェントと環境との<strong>関係</strong>である。行動的なものと認知的なもの（注意・計画・記憶）があり、基本のアフォーダンスが揃って初めて成り立つ複合アフォーダンスもある。一方の利用可能な集合がもう一方を包含するときに複雑さを比べられ、包含関係がなければ比較できない。複雑さはその時点の性質であり、学習によって変わる。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>論文の概念</th><th>このモデルでの対応</th></tr></thead>
+            <tbody>
+              <tr><td>能力を発揮する機会としてのアフォーダンス</td><td>保存せず、行為定義 × 人物 × 環境から計算する</td></tr>
+              <tr><td>行動的／認知的</td><td><code>kind: 'behavioral' | 'cognitive'</code>。主な効果が外界に及ぶなら行動的、内部状態に及ぶなら認知的</td></tr>
+              <tr><td>basic／composite</td><td>basic＝行為定義1件。composite＝目標に届く行為列（計画）。第6章で技として記憶できる</td></tr>
+              <tr><td>包含による複雑さの比較</td><td><code>compareRepertoire()</code> が greater／less／equal／incomparable を返す</td></tr>
+              <tr><td>能力は時点の性質</td><td>成長＝利用できる行為の集合（レパートリー）の拡大として測る（第7章）</td></tr>
+              <tr><td>認知と行動の相互依存</td><td>計画の能力が行為の組合せを広げる。物語系の物を読むと、新しい行為の前提条件（知識）が満たされる</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </aside>
+
+      <h3>両論文の接点：読むRPGでは、プレイヤーは読む人</h3>
+      <p>Pinchbeckは、勢力どうしが争うゲームでは、プレイヤーの活動と無関係にエージェントどうしのやりとりを観察できると指摘している。読むRPGは、この状態を作品の中心に置く。</p>
+      <ul>
+        <li>崖を登る、鉤縄を掛けるといったゲームプレイ系のアフォーダンスは、すべて人物が自律的に使う。</li>
+        <li>読み手に残るのは、物語系のアフォーダンス（物語世界を支える、筋の理解を進める）だけである。読み手はログという「物」を通して解釈を引き出す。</li>
+        <li>アバターがいないので、Pinchbeckがアバターの変化として特別に扱う型は、「行為者自身の変化」か「他の人物の変化」に吸収する。</li>
+      </ul>
+
+      <!-- ===== 2. 設計原則 ===== -->
+      <h2 id="principles">2. 設計原則 P1〜P8</h2>
+      <p>P1〜P4はPinchbeckから、P5〜P8はBaker &amp; Robertsから導いた。</p>
+      <ul class="card-grid">
+        <li><span class="card-id">P1</span><span class="card-title">すべての物を状態とパラメータで記述する</span>
+          <p>人物・物・場所を、<code>state</code> と <code>params</code> を持つ同じ基底型から作る。</p><p class="card-src">← Pinchbeck：agentは「AIの付いた多状態オブジェクト」</p></li>
+        <li><span class="card-id">P2</span><span class="card-title">状態の切り替えは宣言的な規則で起こす</span>
+          <p>効果はまずパラメータを変え、閾値規則が状態を切り替える。スイッチのような一斉の切り替えだけ、効果で直接設定する。</p><p class="card-src">← Pinchbeck：閾値による状態遷移</p></li>
+        <li><span class="card-id">P3</span><span class="card-title">重要度は設計時の値として持つ</span>
+          <p>実行時の使われ方とは分け、両者のずれを研究で測れるようにする。</p><p class="card-src">← Pinchbeck：重要度は遊び方で変わる</p></li>
+        <li><span class="card-id">P4</span><span class="card-title">物語系とゲームプレイ系は同じ物の2つの軸</span>
+          <p>別々の仕組みにしない。</p><p class="card-src">← Pinchbeck：両者に概念上の区別はない</p></li>
+        <li><span class="card-id">P5</span><span class="card-title">アフォーダンスは関係であり、計算で求める</span>
+          <p>行為定義（可能性）と、その時点で使える行為を型の上でも分ける。保存するのは行為定義と世界状態だけ。</p><p class="card-src">← Baker &amp; Roberts：エージェントと環境の関係</p></li>
+        <li><span class="card-id">P6</span><span class="card-title">能力は行動的と認知的の2次元で持つ</span>
+          <p>1本の「強さ」の数値にまとめない。</p><p class="card-src">← Baker &amp; Roberts：行動的／認知的</p></li>
+        <li><span class="card-id">P7</span><span class="card-title">計画と記憶は認知的アフォーダンス</span>
+          <p>計画を立てたこと自体を、イベント（<code>type: 'plan'</code>）として記録する。</p><p class="card-src">← Baker &amp; Roberts：認知的アフォーダンス</p></li>
+        <li><span class="card-id">P8</span><span class="card-title">複雑さを観察できる指標に落とす</span>
+          <p>利用可能な数、レパートリーの包含関係、解決経路の数を、ログと定義データから計算する。</p><p class="card-src">← Baker &amp; Roberts：利用できる範囲による比較</p></li>
+      </ul>
+
+      <!-- ===== 3. データモデル ===== -->
+      <h2 id="model">3. データモデル</h2>
+
+      <h3>全体像</h3>
+      <p>データは、変わらない<strong>作品データ</strong>（<code>Catalog</code>）、実行中に変わる<strong>世界状態</strong>（<code>WorldState</code>）、追記だけされる<strong>履歴</strong>（<code>History</code>）の3つに分かれる。それぞれ独立にJSONへ変換できる。</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 360 460" role="img" aria-labelledby="fig1-title fig1-desc">
+          <title id="fig1-title">データモデルの全体像</title>
+          <desc id="fig1-desc">作品データと世界状態を評価器が読み、いま実行できる行為（保存しない計算値）を求める。行為を適用すると、新しい世界状態と出来事の記録ができ、出来事は履歴に追記され、ログ表示や研究の分析に使われる。</desc>
+          <defs>
+            <marker id="ah1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path class="arrowhead" d="M0,0 L8,4 L0,8 z"/>
+            </marker>
+          </defs>
+          <rect class="box-data" x="8" y="8" width="168" height="78" rx="8"/>
+          <text class="t-b" x="92" y="34" text-anchor="middle">Catalog</text>
+          <text class="t-s" x="92" y="54" text-anchor="middle">作品データ・変わらない</text>
+          <text class="t-s" x="92" y="73" text-anchor="middle">能力と行為の定義</text>
+
+          <rect class="box-data" x="184" y="8" width="168" height="78" rx="8"/>
+          <text class="t-b" x="268" y="34" text-anchor="middle">WorldState</text>
+          <text class="t-s" x="268" y="54" text-anchor="middle">世界状態・変わる</text>
+          <text class="t-s" x="268" y="73" text-anchor="middle">人物・物・場所</text>
+
+          <path class="arrow" d="M92,86 L150,128" marker-end="url(#ah1)"/>
+          <path class="arrow" d="M268,86 L210,128" marker-end="url(#ah1)"/>
+
+          <rect class="box-rule" x="60" y="132" width="240" height="58" rx="8"/>
+          <text class="t-b" x="180" y="156" text-anchor="middle">rules（評価器）</text>
+          <text class="t-s" x="180" y="177" text-anchor="middle">条件・効果・遷移を評価する</text>
+
+          <path class="arrow" d="M140,190 L92,236" marker-end="url(#ah1)"/>
+          <path class="arrow" d="M220,190 L268,236" marker-end="url(#ah1)"/>
+
+          <rect class="box-calc" x="8" y="240" width="168" height="92" rx="8"/>
+          <text class="t-b" x="92" y="266" text-anchor="middle">Affordance[]</text>
+          <text class="t-s" x="92" y="286" text-anchor="middle">いま実行できる行為</text>
+          <text class="t-s" x="92" y="303" text-anchor="middle">計算値・保存しない</text>
+          <text class="t-code" x="92" y="322" text-anchor="middle">availableAffordances</text>
+
+          <rect class="box-data" x="184" y="240" width="168" height="92" rx="8"/>
+          <text class="t-b" x="268" y="266" text-anchor="middle">新しい WorldState</text>
+          <text class="t-s" x="268" y="286" text-anchor="middle">＋ 出来事と変化の記録</text>
+          <text class="t-code" x="268" y="303" text-anchor="middle">WorldEvent</text>
+          <text class="t-code" x="268" y="322" text-anchor="middle">applyAction()</text>
+
+          <path class="arrow" d="M268,332 L268,370" marker-end="url(#ah1)"/>
+
+          <rect class="box-log" x="184" y="374" width="168" height="78" rx="8"/>
+          <text class="t-b" x="268" y="400" text-anchor="middle">History</text>
+          <text class="t-s" x="268" y="420" text-anchor="middle">WorldEvent[]・追記のみ</text>
+          <text class="t-s" x="268" y="438" text-anchor="middle">唯一の一次データ</text>
+
+          <path class="arrow" d="M184,413 L162,413" marker-end="url(#ah1)"/>
+
+          <rect class="box" x="8" y="374" width="152" height="78" rx="8"/>
+          <text class="t-b" x="84" y="400" text-anchor="middle">読む・分析する</text>
+          <text class="t-s" x="84" y="420" text-anchor="middle">ログ表示・記憶・歴史</text>
+          <text class="t-s" x="84" y="438" text-anchor="middle">研究の指標</text>
+        </svg>
+        <figcaption>図1　作品データと世界状態から、行為の可能性と出来事が生まれる</figcaption>
+      </figure>
+
+      <p>第14章のセーブデータは <code>WorldState</code> と <code>History</code> を保存し、<code>Catalog</code> は版番号で参照する。本番開発で作品データを作る作業は、<code>Catalog</code> と初期の <code>WorldState</code> を書く作業になる。</p>
+
+      <h3>アフォーダンスは関係として計算する</h3>
+      <figure class="diagram">
+        <svg viewBox="0 0 360 300" role="img" aria-labelledby="fig2-title fig2-desc">
+          <title id="fig2-title">アフォーダンスの計算</title>
+          <desc id="fig2-desc">行為定義、人物、環境の3つを組み合わせて評価し、その時点でその人物が実行できる行為を求める。環境が変わると、他の人物のアフォーダンスも変わる。</desc>
+          <defs>
+            <marker id="ah2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path class="arrowhead" d="M0,0 L8,4 L0,8 z"/>
+            </marker>
+          </defs>
+          <rect class="box-data" x="8" y="8" width="180" height="58" rx="8"/>
+          <text class="t-b" x="20" y="32">行為定義 <tspan class="t-code">ActionDef</tspan></text>
+          <text class="t-s" x="20" y="53">前提条件・効果・コスト</text>
+
+          <rect class="box-data" x="8" y="76" width="180" height="58" rx="8"/>
+          <text class="t-b" x="20" y="100">人物 <tspan class="t-code">Agent</tspan></text>
+          <text class="t-s" x="20" y="121">能力・パラメータ・持ち物</text>
+
+          <rect class="box-data" x="8" y="144" width="180" height="58" rx="8"/>
+          <text class="t-b" x="20" y="168">環境 <tspan class="t-code">Scene</tspan></text>
+          <text class="t-s" x="20" y="189">その場にある物と、その状態</text>
+
+          <path class="arrow" d="M188,37 L218,88" marker-end="url(#ah2)"/>
+          <path class="arrow" d="M188,105 L216,105" marker-end="url(#ah2)"/>
+          <path class="arrow" d="M188,173 L218,122" marker-end="url(#ah2)"/>
+
+          <rect class="box-calc" x="220" y="50" width="132" height="110" rx="8"/>
+          <text class="t-b" x="286" y="84" text-anchor="middle">アフォーダンス</text>
+          <text class="t-s" x="286" y="108" text-anchor="middle">いま、この人が</text>
+          <text class="t-s" x="286" y="125" text-anchor="middle">実行できる行為</text>
+          <text class="t-s" x="286" y="146" text-anchor="middle">（計算値）</text>
+
+          <rect class="box-log" x="8" y="222" width="344" height="70" rx="8"/>
+          <text class="t-m" x="20" y="250">蔦が切れる → 蔦を登る行為が誰にも使えなくなる</text>
+          <text class="t-m" x="20" y="275">鉤縄を掛ける → 他の人物に「鉤縄を登る」が現れる</text>
+        </svg>
+        <figcaption>図2　行為定義・人物・環境の関係からアフォーダンスを求める（P5）</figcaption>
+      </figure>
+
+      <h3>主要な型</h3>
+      <p>型はすべて <code>domain/types.ts</code> の1か所に集める。各型の主なフィールドと、初めて登場する章を示す。全文は元の文書の4.2節にある。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>型</th><th>役割</th><th>主なフィールド</th></tr></thead>
+          <tbody>
+            <tr><td><code>EntityBase</code></td><td>人物・物・場所の共通の土台（P1）</td><td><code>id</code> <code>kind</code> <code>name</code> <code>state</code> <code>params</code> <code>location</code> <code>significance</code></td></tr>
+            <tr><td><code>Agent</code></td><td>人物</td><td><code>capabilities</code>（序章〜第2章）、<code>goals</code> <code>traits</code>（第5章）、<code>memory</code> <code>knowledge</code> <code>skills</code>（第6章）、<code>xp</code>（第7章）</td></tr>
+            <tr><td><code>WorldObject</code></td><td>物。<code>portable: true</code> なら持ち運べる <code>Item</code></td><td><code>states</code> <code>transitions</code> <code>presets</code> <code>objectClass</code> <code>significance</code>（第2章）、<code>description</code>（第4章）、<code>lore</code>（第6章）</td></tr>
+            <tr><td><code>Place</code></td><td>場所</td><td><code>exits</code>（第9章）。座標は <code>params.x</code>・<code>params.y</code></td></tr>
+            <tr><td><code>CapabilityDef</code></td><td>能力の定義（P6）</td><td><code>kind: 'behavioral' | 'cognitive'</code>、<code>growth</code>（第7章）</td></tr>
+            <tr><td><code>ActionDef</code></td><td>行為の可能性</td><td><code>pre</code> <code>effects</code> <code>cost</code> <code>kind</code> <code>target</code>、<code>text</code>（第4章）、<code>chance</code>（第5章）</td></tr>
+            <tr><td><code>Affordance</code></td><td>いま実行できる行為（計算値・P5）</td><td><code>actionId</code> <code>actorId</code> <code>targetId</code> <code>kind</code> <code>cost</code></td></tr>
+            <tr><td><code>ActionCheck</code></td><td>実行できない理由</td><td><code>ok</code> <code>failed</code>（満たされなかった条件）</td></tr>
+            <tr><td><code>WorldEvent</code></td><td>出来事の構造化記録</td><td><code>t</code> <code>type</code> <code>actor</code> <code>action</code> <code>changes</code>、<code>decision</code>（第3章）、<code>causes</code>（第12章）</td></tr>
+            <tr><td><code>DecisionRecord</code></td><td>決定時点の記録（研究用）</td><td><code>available</code> <code>algorithm</code> <code>expanded</code> <code>plan</code> <code>planCost</code> <code>exploited</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>条件と効果の語彙</h3>
+      <p>前提条件・目標・遷移条件は同じ「条件」の言語で書く。語彙は小さく固定し、多様さはデータの組合せで出す。新しい種類は、章の課題で必要になったときに1つずつ足す。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="nowrap">章</th><th>条件（Condition）</th><th>効果（Effect）</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap">第2章</td><td><code>param</code> <code>state</code> <code>at</code> <code>holds</code> <code>colocated</code> <code>capability</code> <code>not</code></td><td><code>addParam</code> <code>setParam</code> <code>setState</code> <code>moveTo</code></td></tr>
+            <tr><td class="nowrap">第5章</td><td><code>any</code></td><td><code>damage</code></td></tr>
+            <tr><td class="nowrap">第6章</td><td><code>knows</code> <code>remembers</code></td><td><code>learn</code></td></tr>
+            <tr><td class="nowrap">第7章</td><td>—</td><td><code>raiseCapability</code></td></tr>
+            <tr><td class="nowrap">第11章</td><td>—</td><td><code>remove</code> <code>spawn</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>評価の決まり</h3>
+      <p>どの章でも同じ意味で動くよう、評価の順序と既定値を固定する。</p>
+      <ul>
+        <li><strong>コストの展開：</strong>体力・魔力のコストは、「足りていること」の前提条件と、「その分を引く」効果に自動で展開する。作者が重ねて書く必要はない。</li>
+        <li><strong>実行の順序：</strong>条件の確認 → 世界状態の複製（元は変えない）→ コストを引く → 効果を順に適用 → 遷移規則を1回だけ評価 → 変化を <code>Change[]</code> として記録。</li>
+        <li><strong>決定性：</strong>宣言的な規則の評価に乱数は使わない。乱数は戦闘・成功確率・方策だけで使い、乱数生成器は必ず引数で渡す。</li>
+        <li><strong>列挙の順序：</strong>実行できる行為は <code>ActionId</code> の辞書順で返す。探索結果の再現性はこの順序に依存する。</li>
+        <li><strong>知覚の範囲：</strong>「同じ場所にいる」などの暗黙の条件は置かない。必要なら条件として明示的に書く。</li>
+      </ul>
+
+      <h3>例：崖の蔦をデータで書く（第2・3章）</h3>
+      <figure class="code">
+        <figcaption>設計時の例（第2章の content/cliff.ts に相当・抜粋）</figcaption>
+<pre><code>const vine: WorldObject = {
+  id: 'vine', kind: 'object', name: '蔦', location: 'cliff-bottom',
+  state: 'intact', states: ['intact', 'torn'],
+  params: { strength: 2 },
+  transitions: [{ from: 'intact', to: 'torn',
+                  when: [{ type: 'param', of: '$self', key: 'strength', op: '&lt;=', value: 0 }] }],
+  objectClass: 'controlled',
+  significance: { play: 2, story: 0 },
+};
+
+const climbVine: ActionDef = {
+  id: 'climb:vine', label: '蔦をつたって岩棚へ登る', kind: 'behavioral', target: 'vine',
+  pre: [
+    { type: 'at', of: '$actor', place: 'cliff-bottom' },
+    { type: 'state', of: 'vine', is: 'intact' },
+    { type: 'capability', of: '$actor', id: 'climb', min: 1 },
+  ],
+  effects: [
+    { type: 'moveTo', of: '$actor', to: 'ledge' },
+    { type: 'addParam', of: 'vine', key: 'strength', delta: -1 },
+  ],
+  cost: { stamina: 3 },
+};</code></pre>
+      </figure>
+      <p>蔦の <code>strength</code> が0になると、遷移規則で状態が <code>torn</code> になり、蔦を登る行為は誰にとっても使えなくなる。Pinchbeckの「壊れる木箱」と同じ構造である。逆に、ある人物が鉤縄を岩の突起に掛けると、その場にいる別の人物に「鉤縄を登る」行為が現れる。環境の変化が他者のアフォーダンスを変えることを、データだけで表せる。</p>
+
+      <h3>主な判断</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>論点</th><th>採用した案</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>条件・効果の表し方</td><td>少数の型を持つ宣言的データ</td><td>JSONに保存でき、日本語で説明でき、研究で分析できる。関数は入れない</td></tr>
+            <tr><td>アフォーダンスの保存</td><td>保存せず毎回計算する</td><td>関係として扱う立場に忠実で、重複データの不整合も起きない</td></tr>
+            <tr><td>重要度</td><td><code>{ play, story }</code> の2軸、0〜3</td><td>両系統にそれぞれ尺度がある。corroborative や story object は値から導ける</td></tr>
+            <tr><td>状態の更新</td><td>複製して新しい状態を返す</td><td>探索で状態を分岐させやすく、テストも書きやすい</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ===== 4. 章ごとの導入計画 ===== -->
+      <h2 id="plan">4. 章ごとの導入計画</h2>
+      <p>序章〜第3章で入れる型は、第16章の最終形の部分集合になるよう設計する。前の章のデータは、後の章でも同じJSONの形で読める。色の付いた行は公開中の章である。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="nowrap">章</th><th>主に導入するもの</th><th>文献との関係</th></tr></thead>
+          <tbody>
+            <tr class="is-current"><td class="nowrap"><a href="../chapters/ch00.html">序章</a></td><td>人物（名前・HP・現在地）、出来事と変化の記録</td><td>人物を「パラメータを持つ物」として書き始める（P1の入口）</td></tr>
+            <tr class="is-current"><td class="nowrap"><a href="../chapters/ch01.html">第1章</a></td><td>生死の状態、戦闘用パラメータ、世界状態、乱数の状態</td><td>閾値（HP≦0）による状態変化を、まず手続き的に書く</td></tr>
+            <tr class="is-current"><td class="nowrap"><a href="../chapters/ch02.html">第2章</a></td><td>物・場所・能力、条件と効果の語彙、行為定義、アフォーダンスの計算、重要度の2軸</td><td>状態・パラメータ・閾値遷移・重要度、能力×環境＝アフォーダンス</td></tr>
+            <tr class="is-current"><td class="nowrap"><a href="../chapters/ch03.html">第3章</a></td><td>目標、探索問題、決定の記録、計画イベント、場所の座標、経路の列挙</td><td>composite＝計画、計画は認知的アフォーダンス、複数の解決経路</td></tr>
+            <tr><td class="nowrap">第4章</td><td>イベントID、叙述テンプレート、描写文、重み付け、詳細／簡潔ログ</td><td>物語系アフォーダンスとしてのログ</td></tr>
+            <tr><td class="nowrap">第5章</td><td>目標・性格・モード、成功確率、戦闘の行為定義化、計画の能力</td><td>agentの選択、動機、計画の能力による媒介</td></tr>
+            <tr><td class="nowrap">第6章</td><td>記憶・知識・技、読解の行為</td><td>記憶と読解は認知的アフォーダンス</td></tr>
+            <tr><td class="nowrap">第7章</td><td>能力の成長、経験値、レパートリーの比較</td><td>成長＝利用可能な集合の拡大、包含による比較</td></tr>
+            <tr><td class="nowrap">第8章</td><td>時間のコスト、行動サイクル、人生の要約</td><td>複雑さは時点の性質</td></tr>
+            <tr><td class="nowrap">第9章</td><td>場所の出口、世界のシード、タグ、タグ指定の汎用行為</td><td>物の意外な組合せが作者の想定外に起こりうる</td></tr>
+            <tr><td class="nowrap">第10章</td><td>複数人物の処理順序、出会いのイベント</td><td>他者のいる環境が新しいアフォーダンスを生む</td></tr>
+            <tr><td class="nowrap">第11章</td><td>道が通れる条件、物の追加と除去、発見のイベント</td><td>環境集合の変化。ある人物の行為が他者のアフォーダンスを変える</td></tr>
+            <tr><td class="nowrap">第12章</td><td>出来事の原因、記念物、生没年</td><td>過去の出来事が story object として残る</td></tr>
+            <tr><td class="nowrap">第13章</td><td>表示用の値（ドメインの型は増やさない）</td><td>—</td></tr>
+            <tr><td class="nowrap">第14章</td><td>セーブデータ、読み込み時の検証、版の移行</td><td>宣言的データであることの利点が表に出る</td></tr>
+            <tr><td class="nowrap">第15章</td><td>時間進行の制御（ドメインの型は増やさない）</td><td>—</td></tr>
+            <tr><td class="nowrap">第16章</td><td>実行のメタ情報、研究用の書き出し</td><td>研究用フックの完成</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ===== 5. 研究用フック ===== -->
+      <h2 id="research">5. 研究用フック</h2>
+
+      <h3>方針</h3>
+      <ul>
+        <li>イベントログを唯一の一次データとする。指標は、ログと作品データから<strong>あとで計算する</strong>純粋関数として書く。</li>
+        <li>ログに足すのは、あとから復元できない決定時点の記録（<code>DecisionRecord</code>）だけにする。別解の数のような重い項目は既定では記録しない。</li>
+        <li>再現できることを最優先にする。シード、作品データの版、コードの版を実行ごとに記録する。</li>
+      </ul>
+
+      <h3>記録するもの</h3>
+      <ol>
+        <li><strong>行為イベント</strong>：すべての変化を、何による変化か（効果・コスト・遷移）と合わせて記録する。「何をしたか」と「どう状況が変わったか」がここから復元できる。</li>
+        <li><strong>計画イベント</strong>：そのとき利用できた行為、探索法、展開ノード数、計画、そのコスト、利用した物を記録する。</li>
+        <li><strong>実行のメタ情報</strong>：実行ID、シード、作品データの版、スキーマの版、コミットID、シナリオID、開始時刻。</li>
+      </ol>
+      <p>書き出しはJSON Lines（1行目がメタ情報、2行目以降が出来事）とする。統計ソフトや表計算ソフトに読み込みやすいためである。</p>
+
+      <h3>指標</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>指標</th><th>定義</th><th class="nowrap">導入</th></tr></thead>
+          <tbody>
+            <tr><td>利用可能アフォーダンス数</td><td>決定時点で使えた行動的・認知的な行為の数</td><td class="nowrap">第3章</td></tr>
+            <tr><td>経路の識別子</td><td>計画が利用した物と能力の集合。例：直接登る＝<code>{cap:climb, cliff}</code>、蔦＝<code>{cap:climb, vine}</code>、ロープ＝<code>{anchor, cap:climb, rope}</code></td><td class="nowrap">第3章</td></tr>
+            <tr><td>解決経路の数</td><td>コストの上限以内で目標に届く経路の識別子のうち、包含について極小なものの数</td><td class="nowrap">第3章</td></tr>
+            <tr><td>間接性</td><td>採用した計画の手数 − 最短手数</td><td class="nowrap">第3章</td></tr>
+            <tr><td>重要度の逸脱</td><td>計画が利用した物のうち、設計時の重要度（play）が1以下のもの。「ただの岩」が経路の要になった、という観察</td><td class="nowrap">第3章</td></tr>
+            <tr><td>アフォーダンス型の分布</td><td>各変化をPinchbeckの型（COwnP／COwnL／COP／CEP など）に分類して数えたもの</td><td class="nowrap">第4章</td></tr>
+            <tr><td>レパートリーとその比較</td><td>能力の条件だけで実行できる行為の集合と、その包含関係</td><td class="nowrap">第7章</td></tr>
+            <tr><td>経路の希少度</td><td>複数回・複数人物の実行で、その経路が現れた割合</td><td class="nowrap">第10章</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>「機転・奇策」の操作的定義（作業仮説）</h3>
+      <p>教材の段階では、次の3条件をすべて満たす計画を「機転の候補」としてタグ付けするにとどめる。最終的な判断は、論文の分析で人が行う。</p>
+      <ol>
+        <li>目標に届く経路が2通り以上あった。</li>
+        <li>採用した計画が、最短手数の経路と異なる。</li>
+        <li>計画が2つ以上の物を組み合わせている。</li>
+      </ol>
+      <p>第3章の例題（登攀3のアリア）では、解決経路が3通りあり、ロープの経路がこの条件を満たす。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>経路の識別子</th><th class="nowrap">手数</th><th class="nowrap">体力</th><th>機転の候補</th></tr></thead>
+          <tbody>
+            <tr><td><code>{anchor, cap:climb, rope}</code></td><td>7</td><td>7</td><td>該当（突起の重要度は1なので、重要度の逸脱も観察できる）</td></tr>
+            <tr><td><code>{cap:climb, vine}</code></td><td>4</td><td>8</td><td>—</td></tr>
+            <tr><td><code>{cap:climb, cliff}</code></td><td>3</td><td>11</td><td>—（最短手数）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout is-note">
+        <p class="box-label">限界</p>
+        <p>第3章の時点では、ロープの組合せを作者が行為定義として明示的に書いている。作者の想定外の組合せが起こりうるのは、タグ指定の汎用行為を導入する第9章以降である。この限界は、教材と論文の両方で明記する。</p>
+      </div>
+      <p>やらないこと：すべての決定で別解を全列挙すること、指標をゲーム内の判断に使うこと、独自の分析用データベースを作ること。</p>
+
+      <!-- ===== 6. ログと物語 ===== -->
+      <h2 id="narrative">6. ログと物語</h2>
+
+      <h3>ログは読み手にとっての story object である</h3>
+      <p>読むRPGの読み手は人物を操作しない。読み手が使えるのは、Pinchbeckの物語系の2種類のアフォーダンスだけである。</p>
+      <ul>
+        <li><strong>SD（物語世界を支える）</strong>：筋は進めないが、世界の手触りを保つ描写。</li>
+        <li><strong>STORY（筋の理解を進める）</strong>：状態の変化を伴う出来事。読み手の「次に何が起きるか」の予測を変える。</li>
+      </ul>
+      <figure class="game-log">
+        <figcaption>冒険の記録 <small>SD と STORY の例</small></figcaption>
+            <ol class="log-lines">
+              <li>崖の上で風が鳴っている。<small>（SD）</small></li>
+              <li>蔦が切れた。<small>（STORY）</small></li>
+              <li>鉤縄が岩の突起に掛かった。<small>（STORY）</small></li>
+            </ol>
+      </figure>
+      <p>Pinchbeckは、解釈もアフォーダンスに支えられると述べた。読むRPGでは、ログの1行1行が解釈を引き出す物として働く。叙述の層（<code>narration/</code>）は、出来事を物語系のアフォーダンスに変換する層として設計する。</p>
+
+      <h3>重要度から「読ませる量」を決める</h3>
+      <p>第4章の詳細ログと簡潔ログは、出来事の重み（salience）で切り替える。</p>
+      <div class="formula">salience(出来事) =
+    max(関係する物の play, story)        … 0〜3
+  + 状態の変化を含むなら 1
+  + 行為の失敗か、人物が倒れたことを含むなら 1
+  + 機転の候補なら 1</div>
+      <p>詳細ログはすべての出来事を、簡潔ログは重みが閾値（既定値2）以上の出来事だけを表示する。簡潔ログで省かれた部分は、読み手が想像で埋める余白になる。数字（体力20→13）と短い文の組合せが、その間に何があったかを推し量る手がかりになる。</p>
+
+      <h3>人物にとっての story object</h3>
+      <p>物語系の重要度が高く、読める文（<code>lore</code>）を持つ物は、人物にとっても意味を持つ。第6章で、人物が石碑を「読む」認知的行為を導入する。読んで得た知識は、隠れた道を通る行為などの前提条件を満たす。読み手が読む物語と、人物が読む物語が、同じデータの上で重なる。</p>
+
+      <h3>歴史が story object になる</h3>
+      <p>第12章では、ある出来事を記念する物（墓、碑、噂）を世界に加え、元の出来事を指すようにする。後の時代の人物はその物に出会って読み、読み手はログからその由来をたどる。過去の出来事が、後の人物と読み手の両方にとっての story object になる。</p>
+
+      <!-- ===== 未決事項 ===== -->
+      <h2 id="open">未決事項と限界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>事項</th><th>現状の扱い</th><th>決める時期</th></tr></thead>
+          <tbody>
+            <tr><td>汎用行為の対象選びの表現力</td><td>第9章でタグ1つの指定のみ</td><td>本番の作品データを書く前</td></tr>
+            <tr><td>能力で成功確率を変えるか</td><td>第5章は固定の確率のみ</td><td>本番開発</td></tr>
+            <tr><td>知覚の範囲（見えない物）</td><td>条件で明示する</td><td>第10章の実装時</td></tr>
+            <tr><td>機転の判定基準</td><td>上の作業仮説</td><td>論文の分析計画を立てるとき</td></tr>
+            <tr><td>行動的／認知的の境界</td><td>主な効果が内部に及ぶなら認知的</td><td>論文で立場を明記する</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>リスクとして、条件・効果の語彙の膨張（各章で足すのは多くて2〜3種類にとどめる）と、探索の状態爆発（第3章では消費する資源を状態の同一性から外し、第9章以降は計画の能力で展開数を制限する）がある。</p>
+
+      <nav class="pager" aria-label="関連ページ">
+        <a class="prev" href="../index.html"><span class="dir">← 戻る</span>トップページ</a>
+        <a class="next" href="../parts/part1.html"><span class="dir">次に読む →</span>第1部 一瞬の行動の概要</a>
+      </nav>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第2章 障害を乗り越える｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="技能・持ち物・環境によって、同じ崖の前で使える行為が変わる。行為をデータとして定義し、使える行為（アフォーダンス）を計算で求める評価器を作る。">
+  <link rel="prev" href="ch01.html">
+  <link rel="next" href="ch03.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="ch00.html">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="../parts/part1.html">第1部の概要</a></li>
+            <li><a href="ch01.html">第1章 戦闘する冒険者</a></li>
+            <li><a href="ch02.html" aria-current="page">第2章 障害を乗り越える</a></li>
+            <li><a href="ch03.html">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="../references/affordance.html">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>この章の内容</summary>
+    <nav class="drawer-body" aria-label="この章の内容">
+      <p class="nav-heading">この章の内容</p>
+      <ol class="toc-list">
+        <li><a href="#goal">1. 今回作るもの</a></li>
+        <li><a href="#start">2. 出発点</a></li>
+        <li><a href="#exercise">3. 演習</a></li>
+        <li><a href="#knowledge">4. 必要な知識</a></li>
+        <li><a href="#column">文献コラム</a></li>
+        <li><a href="#check">5. 動作確認</a></li>
+        <li><a href="#test">6. テスト</a></li>
+        <li><a href="#solution">7. 完成版コード</a></li>
+        <li><a href="#review">8. 振り返り</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li><a href="../parts/part1.html">第1部 一瞬の行動</a></li>
+          <li aria-current="page">第2章 障害を乗り越える</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header">
+        <p class="eyebrow">第1部 一瞬の行動 ／ 第2章</p>
+        <h1>障害を乗り越える</h1>
+        <p class="lead">同じ崖の前に立っても、登攀の得意なアリア、鉤縄を持つボルド、浮遊の魔法を使うセナでは、取れる行動が違う。この章では、行為を「データ」として書き、その人がいま使える行為を「規則」で計算して求める。</p>
+        <ul class="meta-list" aria-label="この章の概要">
+          <li>目安 3〜4時間</li>
+          <li>TypeScript：判別共用体、Record、satisfies</li>
+          <li>Git：ブランチ</li>
+        </ul>
+      </header>
+
+      <div class="chapter-body">
+
+        <!-- 1. 今回作るもの -->
+        <section class="step" id="goal">
+          <h2>今回作るもの</h2>
+          <p>崖の前にいる3人について、使える行為の一覧を、環境の3つのパターン（通常・嵐で蔦が切れた・岩の突起が崩れた）ごとに表示するCLIを作る。続けて行為を1つずつ実行し、そのたびに誰の手に新しい行為が現れ、何が消えたかを示す。</p>
+
+          <!-- output:ch02 -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>完成版の出力例（npm start）</small></figcaption>
+<pre># seed: - / catalog: cliff@0.1
+== 崖下（通常） ==
+アリア（登攀3）      : 崖を直接よじ登る[体力9] / 蔦をつたって岩棚へ[体力3]
+ボルド（登攀1・鉤縄）: 蔦をつたって岩棚へ[体力3] / 鉤縄を岩の突起に掛ける[体力1]
+セナ（浮遊1）        : 浮遊の魔法で崖上へ[魔力4]
+  ボルドには使えない：「崖を直接よじ登る」（登攀Lv3以上が必要）
+  セナには使えない：「崖を直接よじ登る」（登攀Lv3以上が必要） / 「蔦をつたって岩棚へ」（登攀Lv1以上が必要）
+== 崖下（嵐で蔦が切れた） ==
+アリア（登攀3）      : 崖を直接よじ登る[体力9]
+ボルド（登攀1・鉤縄）: 鉤縄を岩の突起に掛ける[体力1]
+セナ（浮遊1）        : 浮遊の魔法で崖上へ[魔力4]
+  ボルドには使えない：「崖を直接よじ登る」（登攀Lv3以上が必要）
+  セナには使えない：「崖を直接よじ登る」（登攀Lv3以上が必要）
+== 崖下（岩の突起が崩れた） ==
+アリア（登攀3）      : 崖を直接よじ登る[体力9] / 蔦をつたって岩棚へ[体力3]
+ボルド（登攀1・鉤縄）: 蔦をつたって岩棚へ[体力3]
+セナ（浮遊1）        : 浮遊の魔法で崖上へ[魔力4]
+  ボルドには使えない：「崖を直接よじ登る」（登攀Lv3以上が必要）
+  セナには使えない：「崖を直接よじ登る」（登攀Lv3以上が必要） / 「蔦をつたって岩棚へ」（登攀Lv1以上が必要）
+
+-- ボルドが鉤縄を岩の突起に掛ける --
+[1] ボルドは鉤縄を投げ、岩の突起に掛けた。（体力 20→19 / 鉤縄：巻かれている→掛かっている）
+  アリア（崖下）：崖を直接よじ登る / 鉤縄を登る（新しく現れた） / 蔦をつたって岩棚へ
+  ボルド（崖下）：鉤縄を登る（新しく現れた） / 蔦をつたって岩棚へ　（消えた：鉤縄を岩の突起に掛ける）
+  セナ（崖下）：浮遊の魔法で崖上へ
+
+-- アリアが蔦をつたって岩棚へ --
+[2] アリアは蔦をつたって岩棚へ登った。（体力 20→17 / 蔦の強度 2→1）
+  アリア（岩棚）：岩棚から崖上へ（新しく現れた）　（消えた：崖を直接よじ登る / 鉤縄を登る / 蔦をつたって岩棚へ）
+  ボルド（崖下）：鉤縄を登る / 蔦をつたって岩棚へ
+  セナ（崖下）：浮遊の魔法で崖上へ
+
+-- ボルドが蔦をつたって岩棚へ --
+[3] ボルドは蔦をつたって岩棚へ登った。（体力 19→16 / 蔦の強度 1→0 / 蔦：無傷→切れた）
+  アリア（岩棚）：岩棚から崖上へ
+  ボルド（岩棚）：（できることがない）　（消えた：鉤縄を登る / 蔦をつたって岩棚へ）
+  セナ（崖下）：浮遊の魔法で崖上へ</pre>
+          </figure>
+          <!-- /output -->
+
+          <p>期待される動作：</p>
+          <ul>
+            <li>同じ崖でも、技能（登攀・浮遊）と持ち物（鉤縄）によって、使える行為が人ごとに変わる。</li>
+            <li>環境が変わる（蔦が切れる、岩の突起が崩れる）と、同じ人でも使える行為が変わる。</li>
+            <li>ある人の行為が環境を変え、<strong>別の人</strong>に新しい行為を生む。ボルドが鉤縄を掛けると、アリアに「鉤縄を登る」が現れる。</li>
+            <li>行為のログには、何が変わったか（体力 20→19、鉤縄：巻かれている→掛かっている）が残る。</li>
+          </ul>
+
+          <figure class="diagram">
+            <svg viewBox="0 0 480 236" role="img" aria-labelledby="ch02-fig-title">
+              <title id="ch02-fig-title">カタログと世界状態を規則が評価し、アフォーダンスと新しい世界状態を求める流れ</title>
+              <rect class="box-data" x="8" y="12" width="200" height="56" rx="8"/>
+              <text class="t-b" x="108" y="36" text-anchor="middle">カタログ（作品データ）</text>
+              <text class="t" x="108" y="56" text-anchor="middle">能力・行為の定義</text>
+              <rect class="box-data" x="272" y="12" width="200" height="56" rx="8"/>
+              <text class="t-b" x="372" y="36" text-anchor="middle">世界状態</text>
+              <text class="t" x="372" y="56" text-anchor="middle">人物・物・場所</text>
+              <rect class="box-rule" x="140" y="94" width="200" height="48" rx="8"/>
+              <text class="t-b" x="240" y="123" text-anchor="middle">規則（src/rules）</text>
+              <rect class="box-calc" x="8" y="170" width="200" height="56" rx="8"/>
+              <text class="t-b" x="108" y="194" text-anchor="middle">アフォーダンス</text>
+              <text class="t" x="108" y="214" text-anchor="middle">計算値・保存しない</text>
+              <rect class="box-log" x="272" y="170" width="200" height="56" rx="8"/>
+              <text class="t-b" x="372" y="194" text-anchor="middle">新しい世界状態</text>
+              <text class="t" x="372" y="214" text-anchor="middle">＋出来事（変化の記録）</text>
+              <path d="M108 68 L200 94 M372 68 L280 94 M200 142 L108 170 M280 142 L372 170" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            </svg>
+            <figcaption>行為の定義（データ）と、評価の規則（コード）を分ける</figcaption>
+          </figure>
+        </section>
+
+        <!-- 2. 出発点 -->
+        <section class="step" id="start">
+          <h2>出発点</h2>
+          <p>演習用コード <code>examples/ch02/starter</code> から始める。第1章の完成版に、この章の規則（<code>src/rules/</code>）と崖のデータ（<code>src/content/cliff.ts</code>）を加えたものである。規則は完成した状態で入っている。演習では、規則には手を加えず、データを書き換えたり足したりする。</p>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>cp -r examples/ch02/starter my-ch02
+cd my-ch02
+npm ci
+git switch -c ch02-jump   # この章の作業用のブランチを作る
+npm start</code></pre>
+          </figure>
+          <p>第1章の完成版との主な差分：</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>変更</th><th>内容</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/domain/types.ts</code></td><td>変更</td><td>物・場所・能力・条件・効果・行為・アフォーダンスの型。パラメータを <code>Record&lt;string, number&gt;</code> に一般化</td></tr>
+                <tr><td><code>src/rules/conditions.ts</code></td><td>新規</td><td>条件の評価 <code>evaluate</code> と、日本語の説明 <code>describeCondition</code></td></tr>
+                <tr><td><code>src/rules/effects.ts</code></td><td>新規</td><td>効果の適用 <code>applyEffects</code></td></tr>
+                <tr><td><code>src/rules/transitions.ts</code></td><td>新規</td><td>閾値による状態遷移 <code>applyTransitions</code></td></tr>
+                <tr><td><code>src/rules/affordances.ts</code></td><td>新規</td><td><code>checkAction</code>、<code>availableAffordances</code>、<code>sceneOf</code></td></tr>
+                <tr><td><code>src/rules/apply.ts</code></td><td>新規</td><td>行為の実行 <code>applyAction</code></td></tr>
+                <tr><td><code>src/content/cliff.ts</code></td><td>新規</td><td>崖のカタログ、人物3人、環境の3パターン</td></tr>
+                <tr><td><code>src/rules/combat.ts</code> ほか</td><td>変更</td><td>パラメータを <code>param()</code> で読むように直した</td></tr>
+                <tr><td><code>tests/architecture.test.ts</code></td><td>新規</td><td>モジュールの依存の向きを確かめる</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>第1章の戦闘と序章の冒険は、<code>npm start -- --mode battle</code> と <code>npm start -- --mode adventure</code> で引き続き動く。</p>
+        </section>
+
+        <!-- 3. 演習 -->
+        <section class="step" id="exercise">
+          <h2>演習</h2>
+          <p>動作例を見る → データを改造する → 新しい行為を自力で追加する → 完成版と照合する、の順に進める。使う構文と規則の中身は<a href="#knowledge">必要な知識</a>にまとめた。</p>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 2-1 動作例を見る</p>
+            <p class="files">実行するコマンド：<code>npm start</code></p>
+            <p>出力の「崖下（通常）」の3行を読み、次の問いに答える。答えはデータ（<code>src/content/cliff.ts</code>）の中にある。</p>
+            <ol>
+              <li>セナが「蔦をつたって岩棚へ」を使えないのはなぜか。出力の「使えない」の行と、行為 <code>climb:vine</code> の <code>pre</code> を見比べる。</li>
+              <li>「嵐で蔦が切れた」では、なぜアリアとボルドの両方から蔦の行為が消えるのか。蔦の <code>state</code> と、<code>climb:vine</code> の条件 <code>{ type: 'state', of: 'vine', is: 'intact' }</code> を見る。</li>
+              <li>デモの3手目で、蔦の状態が「無傷→切れた」に変わった。行為の効果には状態を変える指定がない。何が状態を変えたのか（ヒント：蔦の <code>transitions</code>）。</li>
+            </ol>
+            <!-- snippet:examples/ch02/solution/src/content/cliff.ts#climb-vine -->
+            <figure class="code">
+              <figcaption>src/content/cliff.ts（行為「蔦をつたって岩棚へ」）</figcaption>
+<pre><code>{
+  id: 'climb:vine',
+  label: '蔦をつたって岩棚へ',
+  kind: 'behavioral',
+  target: 'vine',
+  pre: [
+    { type: 'at', of: '$actor', place: 'cliff-bottom' },
+    { type: 'state', of: 'vine', is: 'intact' },
+    { type: 'capability', of: '$actor', id: 'climb', min: 1 },
+  ],
+  effects: [
+    { type: 'moveTo', of: '$actor', to: 'ledge' },
+    { type: 'addParam', of: 'vine', key: 'strength', delta: -1 },
+  ],
+  cost: { stamina: 3 },
+},</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 2-2 データを改造する</p>
+            <p class="files">編集するファイル：<code>src/content/cliff.ts</code></p>
+            <p>規則のコードには触れず、データだけを書き換えて、出力がどう変わるかを予想してから確かめる。1つ試したら元に戻す。</p>
+            <ol>
+              <li>ボルドの <code>capabilities</code> を <code>{ climb: 3 }</code> にする → 「崖を直接よじ登る」がボルドの一覧に加わる。</li>
+              <li>蔦の <code>params</code> を <code>{ strength: 3 }</code> にする → デモの3手目で蔦が切れず、ボルドには「蔦をつたって岩棚へ」が残る。</li>
+              <li>セナの <code>params</code> の <code>mana</code> を 3 にする → 魔力が足りず、セナの一覧が「（できることがない）」になる。コストが前提条件として働くことを確かめる。</li>
+            </ol>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 2-3 跳躍の能力と行為を自力で追加する</p>
+            <p class="files">編集するファイル：<code>src/content/cliff.ts</code>（2か所の <code>TODO</code>）</p>
+            <p>新しい能力「跳躍」（<code>id: 'jump'</code>）と、行為 <code>jump:ledge</code> を追加する。</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>項目</th><th>値</th></tr></thead>
+                <tbody>
+                  <tr><td>ID・表示名</td><td><code>jump:ledge</code>・岩棚へ跳び上がる</td></tr>
+                  <tr><td>前提条件</td><td>崖下にいる、跳躍Lv2以上</td></tr>
+                  <tr><td>効果</td><td>行為者を岩棚へ移す</td></tr>
+                  <tr><td>コスト</td><td>体力2</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>演習 2-1 の <code>climb:vine</code> の書き方が手本になる。追加したら <code>npm run test:exercises</code> を実行する。テストは「跳躍2の人物が崖下にいるとき、使える行為に <code>jump:ledge</code> が加わる」ことなどを確かめる（<code>tests/exercises/jump.test.ts</code>）。</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>npm run test:exercises</code></pre>
+            </figure>
+          </div>
+
+          <div class="callout is-note">
+            <p class="box-label">注意</p>
+            <p>この演習では <code>src/rules/</code> を編集しない。新しい手段が「データを足すだけで」増えることが、この章の要点である。評価器に <code>if (action.id === 'jump:ledge')</code> のような分岐を書きたくなったら、データの書き方を見直す。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 2-4 完成版と照合する</p>
+            <p>テストが通ったら、完成版のデータと見比べる。条件の順序が違っても、結果は同じになる（条件はすべて満たす AND で評価される）。最後に変更をコミットする。</p>
+            <!-- snippet:examples/ch02/solution/src/content/cliff.ts#jump-action -->
+            <figure class="code">
+              <figcaption>完成版 src/content/cliff.ts（行為 jump:ledge）</figcaption>
+<pre><code>{
+  id: 'jump:ledge',
+  label: '岩棚へ跳び上がる',
+  kind: 'behavioral',
+  pre: [
+    { type: 'at', of: '$actor', place: 'cliff-bottom' },
+    { type: 'capability', of: '$actor', id: 'jump', min: 2 },
+  ],
+  effects: [{ type: 'moveTo', of: '$actor', to: 'ledge' }],
+  cost: { stamina: 2 },
+},</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>npm run check
+git add src/content/cliff.ts
+git commit -m "跳躍の能力と行為 jump:ledge を追加する"</code></pre>
+            </figure>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 2-A 倒木を足す</p>
+            <p>崖下に物「倒木」（<code>log</code>、状態 <code>lying</code>／<code>leaning</code>）を置き、「倒木を崖に立て掛ける」（倒木を <code>leaning</code> にする）と「倒木を伝って岩棚へ」（倒木が <code>leaning</code>、登攀Lv1以上）の2つの行為を足す。誰かが立て掛けると、別の人に新しい行為が現れることを確かめる。どの人物に、どの行為の組合せで新しい突破手段が生まれるかを表にしてみる。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 2-B 理由の説明を読みやすくする</p>
+            <p><code>describeCondition</code> は、状態の条件を「状態が「intact」であることが必要」と表示する。状態名の表示名（<code>stateLabels</code>）を引数で渡せるようにし、「蔦が「無傷」であることが必要」と表示する。<code>tests/conditions.test.ts</code> にテストを足してから直す。</p>
+          </div>
+        </section>
+
+        <!-- 4. 必要な知識 -->
+        <section class="step" id="knowledge">
+          <h2>必要な知識</h2>
+
+          <div class="knowledge">
+            <p class="box-label">判別共用体：条件や効果を「データ」で書く</p>
+            <p>条件や効果は関数ではなく、<code>type</code> という目印を持つオブジェクトで書く。<code>switch (c.type)</code> で分けると、それぞれの分岐の中では、その形にしかないフィールドを使える。関数と違い、JSONにそのまま保存でき、日本語で説明でき、あとから分析できる。</p>
+            <figure class="code">
+              <figcaption>union.ts（<code>npx tsx union.ts</code> で動く）</figcaption>
+<pre><code>// 判別共用体：type の値で、どの形かを見分ける
+type Shape =
+  | { type: 'circle'; r: number }
+  | { type: 'rect'; w: number; h: number };
+
+function area(s: Shape): number {
+  switch (s.type) {
+    case 'circle':
+      return Math.PI * s.r * s.r; // ここでは s.r が使える
+    case 'rect':
+      return s.w * s.h; // ここでは s.w と s.h が使える
+  }
+}
+
+console.log(area({ type: 'rect', w: 3, h: 4 })); // 12
+console.log(JSON.stringify({ type: 'circle', r: 1 })); // データのまま JSON にできる</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">Record と「無いものは0」の規則</p>
+            <p>パラメータは <code>Record&lt;string, number&gt;</code>（文字列のキーと数値の組）で持つ。この教材の設定（<code>noUncheckedIndexedAccess</code>）では、読んだ値は <code>number | undefined</code> になる。毎回 <code>?? 0</code> と書く代わりに、規則を関数 <code>param()</code> の1か所に集める。</p>
+            <figure class="code">
+              <figcaption>record.ts</figcaption>
+<pre><code>// Record&lt;string, number&gt; を読むと number | undefined になる（noUncheckedIndexedAccess）
+const params: Record&lt;string, number&gt; = { stamina: 20 };
+
+const a = params.stamina; // number | undefined
+const b = params.mana ?? 0; // 無ければ 0 とみなす → number
+console.log(a, b); // 20 0
+
+// 規則を1か所に集める
+function param(p: Record&lt;string, number&gt;, key: string): number {
+  return p[key] ?? 0;
+}
+console.log(param(params, 'stamina') - 3); // 17</code></pre>
+            </figure>
+            <!-- snippet:examples/ch02/solution/src/rules/params.ts#param -->
+            <figure class="code">
+              <figcaption>完成版 src/rules/params.ts</figcaption>
+<pre><code>/**
+ * パラメータを読む。存在しないキーは 0 とする。
+ * noUncheckedIndexedAccess により e.params[key] は number | undefined になるので、
+ * 既定値の規則をこの1か所に集める。
+ */
+export function param(e: Entity, key: string): number {
+  return e.params[key] ?? 0;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">不変更新：元の世界を書き換えない</p>
+            <p><code>applyAction</code> は、引数の世界状態を書き換えず、複製を変えて返す。第3章の探索では、1つの状態から何通りもの「もしこうしたら」を試すので、元が変わらないことが欠かせない。</p>
+            <figure class="code">
+              <figcaption>clone.ts</figcaption>
+<pre><code>// 不変更新：元を書き換えず、複製を変えて返す
+interface World { t: number; hp: Record&lt;string, number&gt; }
+
+function hit(world: World, id: string, dmg: number): World {
+  const next = structuredClone(world); // 深い複製
+  next.hp[id] = (next.hp[id] ?? 0) - dmg;
+  next.t += 1;
+  return next;
+}
+
+const w0: World = { t: 0, hp: { aria: 20 } };
+const w1 = hit(w0, 'aria', 3);
+console.log(w0.hp.aria, w1.hp.aria); // 20 17（w0 は変わらない）</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">satisfies：型に合うかだけを確かめる</p>
+            <p><code>export const cliffCatalog = { ... } satisfies Catalog;</code> は、値が <code>Catalog</code> の形に合っているかを型チェックで確かめる。書き間違い（<code>tpye: 'at'</code> など）はここで見つかる。演習 2-3 で行為を足したときに型エラーが出たら、まず条件や効果の <code>type</code> の綴りを確かめる。</p>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">評価器の中身：条件を評価し、使える行為を列挙する</p>
+            <p>条件1つを評価する <code>evaluate</code> が、規則の中心である。参照 <code>'$actor'</code>（行為者）や <code>'$target'</code>（対象）は文脈から、それ以外はエンティティのIDとして解決する。解決できない参照を含む条件は偽になる。</p>
+            <!-- snippet:examples/ch02/solution/src/rules/conditions.ts#evaluate -->
+            <figure class="code">
+              <figcaption>src/rules/conditions.ts</figcaption>
+<pre><code>/** 条件を評価する。解決できない参照を含む条件は偽とする。 */
+export function evaluate(c: Condition, ctx: RuleContext): boolean {
+  const { world } = ctx;
+  switch (c.type) {
+    case 'param': {
+      const id = resolveRef(c.of, ctx);
+      const e = id === undefined ? undefined : world.entities[id];
+      return e !== undefined &amp;&amp; compare(param(e, c.key), c.op, c.value);
+    }
+    case 'state': {
+      const id = resolveRef(c.of, ctx);
+      return id !== undefined &amp;&amp; world.entities[id]?.state === c.is;
+    }
+    case 'at': {
+      const id = resolveRef(c.of, ctx);
+      return id !== undefined &amp;&amp; world.entities[id]?.location === c.place;
+    }
+    case 'holds': {
+      const holder = resolveRef(c.of, ctx);
+      const item = resolveRef(c.item, ctx);
+      return holder !== undefined &amp;&amp; item !== undefined &amp;&amp; world.entities[item]?.location === holder;
+    }
+    case 'colocated': {
+      const a = resolveRef(c.a, ctx);
+      const b = resolveRef(c.b, ctx);
+      if (a === undefined || b === undefined) return false;
+      const la = world.entities[a]?.location;
+      return la !== null &amp;&amp; la !== undefined &amp;&amp; la === world.entities[b]?.location;
+    }
+    case 'capability': {
+      const id = resolveRef(c.of, ctx);
+      const e = id === undefined ? undefined : world.entities[id];
+      return e?.kind === 'agent' &amp;&amp; (e.capabilities[c.id] ?? 0) &gt;= c.min;
+    }
+    case 'not':
+      return !evaluate(c.cond, ctx);
+  }
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p>コスト（体力3など）は、評価器が自動で2つに展開する。前提条件「体力が3以上」と、効果「体力を3減らす」である。作者がコストを条件として重ねて書く必要はない。</p>
+            <!-- snippet:examples/ch02/solution/src/rules/affordances.ts#costExpansion -->
+            <figure class="code">
+              <figcaption>src/rules/affordances.ts（コストの展開）</figcaption>
+<pre><code>/** コストを前提条件に展開する：{ param, $actor, key, '&gt;=', v } */
+export function costConditions(def: ActionDef): Condition[] {
+  const conds: Condition[] = [];
+  for (const key of costKeys) {
+    const v = def.cost[key];
+    if (v !== undefined &amp;&amp; v &gt; 0) conds.push({ type: 'param', of: '$actor', key, op: '&gt;=', value: v });
+  }
+  return conds;
+}
+
+/** コストを効果に展開する：{ addParam, $actor, key, -v } */
+export function costEffects(def: ActionDef): Effect[] {
+  const effects: Effect[] = [];
+  for (const key of costKeys) {
+    const v = def.cost[key];
+    if (v !== undefined &amp;&amp; v &gt; 0) effects.push({ type: 'addParam', of: '$actor', key, delta: -v });
+  }
+  return effects;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <!-- snippet:examples/ch02/solution/src/rules/affordances.ts#availableAffordances -->
+            <figure class="code">
+              <figcaption>src/rules/affordances.ts（使える行為の列挙）</figcaption>
+<pre><code>/** その人物がいま実行できる行為を、ActionId の辞書順で返す。 */
+export function availableAffordances(world: WorldState, catalog: Catalog, actorId: EntityId): Affordance[] {
+  const result: Affordance[] = [];
+  const ids = catalog.actions.map((a) =&gt; a.id).sort((a, b) =&gt; (a &lt; b ? -1 : a &gt; b ? 1 : 0));
+  for (const id of ids) {
+    if (!checkAction(world, catalog, actorId, id).ok) continue;
+    const def = findAction(catalog, id);
+    const aff: Affordance = { actionId: id, actorId, kind: def.kind, cost: { ...def.cost } };
+    if (def.target !== undefined) aff.targetId = def.target;
+    result.push(aff);
+  }
+  return result;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p>使える行為は <code>ActionId</code> の辞書順に並べる。順序を固定しておくと、同じ入力から常に同じ結果が得られる。第3章の探索の再現性は、この順序に依存する。</p>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">行為の実行：コスト → 効果 → 状態遷移</p>
+            <p><code>applyAction</code> は、前提条件を確かめ、世界を複製し、コストを引き、効果を書かれた順に適用する。最後に、変化した物について状態遷移の規則を評価する。すべての変化は <code>Change</code> として、何による変化か（<code>via</code>：コスト・効果・遷移）とともに記録する。</p>
+            <!-- snippet:examples/ch02/solution/src/rules/apply.ts#applyAction -->
+            <figure class="code">
+              <figcaption>src/rules/apply.ts</figcaption>
+<pre><code>/**
+ * 行為を実行し、新しい世界状態と出来事を返す。引数の world は変更しない。
+ * 1. 前提条件とコスト条件を確かめる  2. 世界状態を複製する  3. コストを引く
+ * 4. 効果を順に適用する  5. 変化した物の状態遷移を評価する  6. 変化を記録した出来事を作る
+ */
+export function applyAction(
+  world: WorldState,
+  catalog: Catalog,
+  actorId: EntityId,
+  actionId: ActionId,
+): { world: WorldState; event: WorldEvent } {
+  const check = checkAction(world, catalog, actorId, actionId);
+  if (!check.ok) throw new Error(`行為の前提条件を満たしていない: ${actorId} / ${actionId}`);
+
+  const def = findAction(catalog, actionId);
+  const next: WorldState = structuredClone(world);
+  const ctx = def.target === undefined ? { world: next, actorId } : { world: next, actorId, targetId: def.target };
+  const place = getEntity(next, actorId).location;
+
+  const changes: Change[] = [];
+  changes.push(...applyEffects(costEffects(def), ctx, 'cost'));
+  changes.push(...applyEffects(def.effects, ctx, 'effect'));
+  const touched = [...new Set(changes.map((c) =&gt; c.entity))];
+  changes.push(...applyTransitions(next, touched));
+
+  next.t += 1;
+  const event: WorldEvent = { t: next.t, type: 'action', actor: actorId, action: actionId };
+  if (def.target !== undefined) event.target = def.target;
+  if (place !== null) event.place = place;
+  event.changes = changes;
+  return { world: next, event };
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="callout is-note">
+            <p class="box-label">Git：ブランチ</p>
+            <p>演習ごとにブランチを切ると、試した変更を本流（<code>main</code>）と分けておける。演習 2-2 のような「試して元に戻す」改造は、ブランチで行い、不要になったら捨てればよい。</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>git switch -c try-strong-vine   # 試すためのブランチを作って移る
+# … src/content/cliff.ts を書き換えて npm start …
+git switch -                    # 元のブランチに戻る
+git branch -D try-strong-vine   # 試したブランチを捨てる</code></pre>
+            </figure>
+          </div>
+        </section>
+
+        <!-- 文献コラム -->
+        <aside class="literature" id="column" aria-labelledby="column-title">
+          <p class="box-label">文献コラム</p>
+          <h3 id="column-title">状態・パラメータと、「関係」としてのアフォーダンス</h3>
+          <p>Pinchbeck（2009）は、ゲームの物を「状態」と「パラメータ」で記述した。パラメータが閾値に達すると、状態が切り替わる。叩くと壊れる木箱が典型例で、耐久値が0になると「壊れた」状態に移り、その状態で可能な行為が変わる。この章の蔦は、その木箱と同じ構造をしている。</p>
+          <!-- snippet:examples/ch02/solution/src/content/cliff.ts#vine -->
+          <figure class="code">
+            <figcaption>src/content/cliff.ts（蔦）</figcaption>
+<pre><code>{
+  id: 'vine',
+  kind: 'object',
+  name: '蔦',
+  state: 'intact',
+  states: ['intact', 'torn'],
+  params: { strength: 2 },
+  location: 'cliff-bottom',
+  transitions: [
+    { from: 'intact', to: 'torn', when: [{ type: 'param', of: '$self', key: 'strength', op: '&lt;=', value: 0 }] },
+  ],
+  objectClass: 'controlled',
+  significance: { play: 2, story: 0 },
+},</code></pre>
+          </figure>
+          <!-- /snippet -->
+          <p>Baker &amp; Roberts（2025）は、アフォーダンスを、能力を持つエージェントと環境との<strong>関係</strong>として捉えた。崖そのものが「登れる」性質を持つのではない。登攀Lv3のアリアと崖の組では「直接登る」が成り立ち、登攀Lv0のセナと崖の組では成り立たない。そのため、この章ではアフォーダンスを保存せず、そのつど計算で求める。</p>
+          <div class="mapping-head" aria-hidden="true"><span>文献の概念</span><span>この章の実装</span></div>
+          <dl class="mapping">
+            <div><dt>状態（Pinchbeck）</dt><dd>物の <code>state</code> と、取りうる状態の宣言 <code>states</code>（蔦の <code>intact</code>／<code>torn</code>）</dd></div>
+            <div><dt>パラメータ（Pinchbeck）</dt><dd><code>params: Record&lt;string, number&gt;</code>（蔦の <code>strength</code>、人物の <code>stamina</code>）</dd></div>
+            <div><dt>閾値による状態遷移（壊れる木箱）</dt><dd><code>transitions</code> と <code>applyTransitions</code>。蔦の強度が0以下で <code>torn</code> に移り、変化は <code>via: 'transition'</code> として記録される</dd></div>
+            <div><dt>重要度（gameplay／story）</dt><dd><code>significance: { play, story }</code>。崖は <code>{3, 1}</code>、岩の突起は <code>{1, 0}</code>（この章では記録するだけで、規則には使わない）</dd></div>
+            <div><dt>アフォーダンス＝関係（Baker &amp; Roberts）</dt><dd>行為の定義 × 人物の能力・パラメータ × 環境の状態から求める <code>availableAffordances</code>。結果は保存しない</dd></div>
+            <div><dt>能力（行動的・認知的）</dt><dd><code>CapabilityDef</code> の <code>kind</code>。この章の登攀・浮遊・跳躍はすべて行動的</dd></div>
+            <div><dt>環境集合（Pinchbeck）</dt><dd><code>sceneOf</code> が返す場面（その場所にいる人物と物）</dd></div>
+          </dl>
+          <p>ボルドが鉤縄を掛けると、アリアに「鉤縄を登る」が現れる。環境の変化が他者のアフォーダンスを変えることを、コードの分岐ではなくデータだけで表せた。ただし、この章では、人物の目に入らない物も条件に書けば使える。知覚の範囲（見えているか）は条件として明示する方針であり、扱いは第10章で見直す。</p>
+          <p class="ref">Pinchbeck, D. (2009). An affordance based model for gameplay. <i>Proceedings of DiGRA 2009</i>.</p>
+          <p class="ref">Baker, B. &amp; Roberts, S. (2025). Understanding Agent Complexity Through Affordances. <i>Minds and Machines</i>, 35:51.</p>
+        </aside>
+
+        <!-- 5. 動作確認 -->
+        <section class="step" id="check">
+          <h2>動作確認</h2>
+          <ol>
+            <li><code>npm start</code> を実行し、出力が<a href="#goal">今回作るもの</a>の出力例と一致することを確かめる。</li>
+            <li>演習 2-3 を解いた後も、出力は変わらない（跳躍を持つ人物がいないため）。<code>src/content/cliff.ts</code> のセナの <code>capabilities</code> に <code>jump: 2</code> を足して実行し、セナの一覧に「岩棚へ跳び上がる[体力2]」が加わることを確かめる。確かめたら元に戻す。</li>
+            <li><code>npm start -- --mode battle</code> と <code>npm start -- --mode adventure</code> を実行し、第1章と序章の出力が変わっていないことを確かめる。</li>
+          </ol>
+          <p>確認する観点：</p>
+          <ul>
+            <li>一覧の違いが、人（技能・持ち物）と環境（蔦・岩の突起の状態）のどちらから来ているかを説明できる。</li>
+            <li>行為のログで、コストによる変化（体力）と、効果・遷移による変化（鉤縄・蔦の状態）を見分けられる。</li>
+            <li>規則（<code>src/rules/</code>）を変えずに、データだけで新しい手段を増やせた。</li>
+          </ul>
+        </section>
+
+        <!-- 6. テスト -->
+        <section class="step" id="test">
+          <h2>テスト</h2>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>npm test                # 既定のテスト
+npm run test:exercises  # 演習用テスト（演習 2-3 を解くまで失敗する）
+npm run check           # 型チェック → テスト</code></pre>
+          </figure>
+          <p>主なテスト（名前は Given／When／Then の形で書いてある）：</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>確かめること</th></tr></thead>
+              <tbody>
+                <tr><td><code>affordances.test.ts</code></td><td>通常の環境で、アリア＝{直接登る, 蔦}、ボルド＝{蔦, 鉤縄を掛ける}、セナ＝{浮遊}。蔦が切れた・突起が崩れた環境で一覧が変わる。体力2のアリアには蔦の行為（体力3）が現れない。ボルドが鉤縄を掛けると、アリアに「鉤縄を登る」が現れる</td></tr>
+                <tr><td><code>conditions.test.ts</code></td><td>7種類の条件の真偽。解決できない参照は偽。「登攀Lv1以上が必要」などの説明文</td></tr>
+                <tr><td><code>apply.test.ts</code></td><td>変化がコスト → 効果 → 遷移の順に記録される。蔦の強度が1のときに登ると <code>torn</code> になる。引数の世界状態は変わらない</td></tr>
+                <tr><td><code>transitions.test.ts</code></td><td>閾値で状態が切り替わる。プリセットでパラメータが上書きされる。1回の行為で連鎖しない</td></tr>
+                <tr><td><code>serialization.test.ts</code></td><td>カタログ・世界・出来事を JSON にして戻すと、元と深く等しい</td></tr>
+                <tr><td><code>architecture.test.ts</code></td><td><code>rules</code> が <code>sim</code> を読み込むなど、依存の向きの違反がない。<code>Math.random</code> を使っていない</td></tr>
+                <tr><td><code>exercises/jump.test.ts</code></td><td>跳躍2の人物に <code>jump:ledge</code> が現れる。跳躍1・体力1では現れない。実行すると岩棚に移り体力が2減る</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 7. 完成版コード -->
+        <section class="step" id="solution">
+          <h2>完成版コード</h2>
+          <p><a href="https://github.com/aituber-akari/reading-rpg-course/tree/main/examples/ch02/solution">examples/ch02/solution</a> に、この章の最終状態がある。README の手順（<code>npm ci</code> → <code>npm start</code>）で起動できる。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/domain/types.ts</code></td><td>型の定義。作品データ（<code>Catalog</code>）と世界状態（<code>WorldState</code>）を分ける</td></tr>
+                <tr><td><code>src/rules/</code></td><td>評価器。条件・効果・遷移・アフォーダンス・行為の実行。<code>domain</code> と <code>lib</code> にだけ依存する</td></tr>
+                <tr><td><code>src/content/cliff.ts</code></td><td>崖のカタログと初期世界。作品を作る作業は、このファイルを書く作業になる</td></tr>
+                <tr><td><code>src/narration/format.ts</code></td><td>一覧と、変化を含む行為の文を作る。出来事と表示名だけから文を作る</td></tr>
+                <tr><td><code>src/ui/cliff.ts</code></td><td>上の部品を組み立てて、表示する行を作る</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 8. 振り返り -->
+        <section class="step" id="review">
+          <h2>振り返り</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ゲーム上の機能</th><th>習得した技術</th></tr></thead>
+              <tbody>
+                <tr><td>技能・持ち物・環境で変わる行為の一覧</td><td>判別共用体による条件の表現、条件の評価器</td></tr>
+                <tr><td>データを足すだけで増える突破手段</td><td>ルールとデータの分離、<code>satisfies</code> による型の確認</td></tr>
+                <tr><td>切れる蔦、掛かる鉤縄</td><td>閾値による状態遷移、変化の記録（<code>Change</code> と <code>via</code>）</td></tr>
+                <tr><td>他の人の行為で現れる新しい行為</td><td>不変更新（<code>structuredClone</code>）、計算値としてのアフォーダンス</td></tr>
+                <tr><td>「登攀Lv1以上が必要」という理由の表示</td><td>データを日本語で説明する関数（<code>describeCondition</code>）</td></tr>
+                <tr><td>壊れない依存の向き</td><td>テストによるアーキテクチャの確認、ブランチでの試行</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>次の第3章では、ここで作った「1手の行為」を組み合わせ、目標に届く行為の列（計画）を探索で求める。</p>
+        </section>
+
+      </div>
+
+      <nav class="pager" aria-label="前後の章">
+        <a class="prev" href="ch01.html" rel="prev"><span class="dir">← 前の章</span>第1章 戦闘する冒険者</a>
+        <a class="next" href="ch03.html" rel="next"><span class="dir">次の章 →</span>第3章 機転を利かせる</a>
+      </nav>
+      <p class="pager-hint"><kbd>←</kbd> <kbd>→</kbd> キーでも前後の章へ移動できます</p>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

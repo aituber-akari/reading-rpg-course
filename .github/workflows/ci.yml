@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: 章プロジェクトの列挙
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.list.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - id: list
+        run: echo "dirs=$(node scripts/list-examples.mjs)" >> "$GITHUB_OUTPUT"
+
+  check:
+    name: check (${{ matrix.dir }})
+    needs: discover
+    # examples がまだ1つも無いときは matrix が空になるので、ジョブごと飛ばす
+    if: needs.discover.outputs.dirs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJSON(needs.discover.outputs.dirs) }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: ${{ matrix.dir }}/package-lock.json
+      - name: npm ci
+        run: npm ci
+        working-directory: ${{ matrix.dir }}
+      - name: 型チェック
+        run: npm run typecheck
+        working-directory: ${{ matrix.dir }}
+      - name: テスト
+        run: npm test
+        working-directory: ${{ matrix.dir }}
+      - name: README の期待される出力と npm start の一致
+        run: node scripts/check-outputs.mjs "${{ matrix.dir }}"
+
+  repo-checks:
+    name: リポジトリ全体のチェック
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: check:exercises（演習用テストの一致）
+        run: npm run check:exercises
+      - name: check:deps（依存パッケージの版のそろい）
+        run: npm run check:deps
+      - name: check:snippets（教材HTMLと完成版の一致）
+        run: npm run check:snippets
+      - name: build:site（公開サイトを組み立てられるか）
+        run: npm run build:site

@@ -1,0 +1,114 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runBattle > シード42で2回実行すると、イベント列が完全に一致し、スナップショットとも一致する 1`] = `
+[
+  {
+    "action": "attack",
+    "actor": "wolf",
+    "changes": [
+      {
+        "after": 17,
+        "before": 20,
+        "entity": "aria",
+        "field": "param",
+        "key": "hp",
+      },
+    ],
+    "t": 1,
+    "target": "aria",
+    "type": "action",
+  },
+  {
+    "action": "attack",
+    "actor": "aria",
+    "changes": [
+      {
+        "after": 9,
+        "before": 14,
+        "entity": "wolf",
+        "field": "param",
+        "key": "hp",
+      },
+    ],
+    "t": 2,
+    "target": "wolf",
+    "type": "action",
+  },
+  {
+    "action": "attack",
+    "actor": "wolf",
+    "changes": [
+      {
+        "after": 13,
+        "before": 17,
+        "entity": "aria",
+        "field": "param",
+        "key": "hp",
+      },
+    ],
+    "t": 3,
+    "target": "aria",
+    "type": "action",
+  },
+  {
+    "action": "attack",
+    "actor": "aria",
+    "changes": [
+      {
+        "after": 3,
+        "before": 9,
+        "entity": "wolf",
+        "field": "param",
+        "key": "hp",
+      },
+    ],
+    "t": 4,
+    "target": "wolf",
+    "type": "action",
+  },
+  {
+    "action": "attack",
+    "actor": "wolf",
+    "changes": [
+      {
+        "after": 11,
+        "before": 13,
+        "entity": "aria",
+        "field": "param",
+        "key": "hp",
+      },
+    ],
+    "t": 5,
+    "target": "aria",
+    "type": "action",
+  },
+  {
+    "action": "attack",
+    "actor": "aria",
+    "changes": [
+      {
+        "after": 0,
+        "before": 3,
+        "entity": "wolf",
+        "field": "param",
+        "key": "hp",
+      },
+    ],
+    "t": 6,
+    "target": "wolf",
+    "type": "action",
+  },
+  {
+    "actor": "wolf",
+    "t": 6,
+    "type": "defeated",
+  },
+  {
+    "actor": "aria",
+    "outcome": "victory",
+    "t": 6,
+    "target": "wolf",
+    "type": "battleEnd",
+  },
+]
+`;

@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第3章 機転を利かせる｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="同じ目標に対して、BFS・ダイクストラ法・A* を切り替え、計画・コスト・展開ノード数を比べる。解決経路を数え、計画を実行したログを読む。資源配分には動的計画法を使う。">
+  <link rel="prev" href="ch02.html">
+  <link rel="next" href="../parts/part1.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="ch00.html">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="../parts/part1.html">第1部の概要</a></li>
+            <li><a href="ch01.html">第1章 戦闘する冒険者</a></li>
+            <li><a href="ch02.html">第2章 障害を乗り越える</a></li>
+            <li><a href="ch03.html" aria-current="page">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="../references/affordance.html">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>この章の内容</summary>
+    <nav class="drawer-body" aria-label="この章の内容">
+      <p class="nav-heading">この章の内容</p>
+      <ol class="toc-list">
+        <li><a href="#goal">1. 今回作るもの</a></li>
+        <li><a href="#start">2. 出発点</a></li>
+        <li><a href="#exercise">3. 演習</a></li>
+        <li><a href="#knowledge">4. 必要な知識</a></li>
+        <li><a href="#column">文献コラム</a></li>
+        <li><a href="#check">5. 動作確認</a></li>
+        <li><a href="#test">6. テスト</a></li>
+        <li><a href="#solution">7. 完成版コード</a></li>
+        <li><a href="#review">8. 振り返り</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li><a href="../parts/part1.html">第1部 一瞬の行動</a></li>
+          <li aria-current="page">第3章 機転を利かせる</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header">
+        <p class="eyebrow">第1部 一瞬の行動 ／ 第3章</p>
+        <h1>機転を利かせる</h1>
+        <p class="lead">崖を直接よじ登るか、遠回りして鉤縄を取ってくるか。第2章の「1手の行為」を組み合わせ、目標に届く行為の列（計画）を探索で求める。同じ問題でも、探索法によって選ばれる計画が分かれる。その違いを、計画・コスト・展開ノード数の比較と、計画を実行したログで読む。</p>
+        <ul class="meta-list" aria-label="この章の概要">
+          <li>目安 4〜6時間</li>
+          <li>アルゴリズム：BFS、ダイクストラ法、A*、動的計画法</li>
+          <li>Git：Issue、アルゴリズムのテストケース</li>
+        </ul>
+      </header>
+
+      <div class="chapter-body">
+
+        <!-- 1. 今回作るもの -->
+        <section class="step" id="goal">
+          <h2>今回作るもの</h2>
+          <p>「崖の谷」で、村にいるアリア（登攀3・体力20）が崖上を目指す。CLIは、4つの探索法で計画を求めて比べ、目標に届く解決経路を数え、選んだ計画を実行したログを出す。</p>
+
+          <!-- output:ch03 -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>完成版の出力例（npm start）</small></figcaption>
+<pre># seed: - / algo: dijkstra / catalog: cliff-valley@0.1
+# アリア：登攀3・体力20 / 目標：崖上に着く
+
+== 探索法の比較 ==
+探索法          手数  体力  展開  計画
+BFS                3    11     9  村→分かれ道→崖下→崖を直接よじ登る
+ダイクストラ法     7     7    18  村→分かれ道→崖下→物置小屋→鉤縄を拾う→崖下→鉤縄を岩の突起に掛ける→鉤縄を登る
+A*（重み1）        7     7    11  村→分かれ道→崖下→物置小屋→鉤縄を拾う→崖下→鉤縄を岩の突起に掛ける→鉤縄を登る
+A*（重み3）        4     8     4  村→分かれ道→崖下→蔦をつたって岩棚へ→岩棚から崖上へ
+
+== 解決経路（体力20以内、包含について極小なもの） ==
+{anchor, cap:climb, rope}   岩の突起・登攀・鉤縄  体力7・7手
+{cap:climb, vine}           登攀・蔦              体力8・4手
+{cap:climb, cliff}          登攀・崖              体力11・3手
+
+== 実行（ダイクストラ法） ==
+[0] アリアはじっくり考えた。鉤縄を使えば、少ない体力で崖上に行けそうだ。（候補3通り・7手・体力7）
+[1] アリアは村から分かれ道へ歩いた。（体力 20→19）
+[2] アリアは分かれ道から崖下へ歩いた。（体力 19→18）
+[3] アリアは崖下から物置小屋へ歩いた。（体力 18→17）
+[4] アリアは物置小屋の壁から鉤縄を外し、肩に掛けた。（体力 17→16）
+[5] アリアは物置小屋から崖下へ歩いた。（体力 16→15）
+[6] アリアは鉤縄を投げ、岩の突起に掛けた。（体力 15→14 / 鉤縄：巻かれている→掛かっている）
+[7] アリアは鉤縄を登り、崖上に着いた。（体力 14→13）
+アリアは崖上に立った。（残りの体力 13）</pre>
+          </figure>
+          <!-- /output -->
+
+          <p>期待される動作：</p>
+          <ul>
+            <li>BFSは<strong>手数</strong>が最小の計画（崖を直接登る：3手・体力11）を、ダイクストラ法は<strong>体力の消費</strong>が最小の計画（鉤縄を取りに行く：7手・体力7）を返す。</li>
+            <li>A*（重み1）は、ダイクストラ法と同じ計画を、より少ない展開（18 → 11）で見つける。重み3にすると展開はさらに減る（4）が、最適ではない計画（蔦：体力8）になる。</li>
+            <li>目標に届く経路は3通りあり、それぞれ「どの能力でどの物を使ったか」（経路の識別子）で区別される。</li>
+            <li>計画を立てたこと自体が、ログの <code>[0]</code> 行（計画の出来事）として残る。</li>
+          </ul>
+          <p>人物の設定を変えたときの結果は、次のとおりである（テストで確かめている値）。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>条件</th><th>BFS</th><th>ダイクストラ法</th><th>A*（重み1）</th><th>展開ノード（BFS／ダイクストラ／A*）</th></tr></thead>
+              <tbody>
+                <tr><td>登攀3・体力20</td><td>直接登る（3手・体力11）</td><td>鉤縄（7手・体力7）</td><td>鉤縄</td><td>9 ／ 18 ／ 11</td></tr>
+                <tr><td>登攀2・体力20</td><td>蔦（4手・体力8）</td><td>鉤縄</td><td>鉤縄</td><td>14 ／ 18 ／ 11</td></tr>
+                <tr><td>登攀1・体力20</td><td>鉤縄</td><td>鉤縄</td><td>鉤縄</td><td>19 ／ 18 ／ 11</td></tr>
+                <tr><td>登攀3・体力10</td><td>蔦（直接登ると体力が足りない）</td><td>鉤縄</td><td>鉤縄</td><td>14 ／ 18 ／ 11</td></tr>
+                <tr><td>登攀3・体力6</td><td colspan="3">計画なし</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>資源配分の別演習として、<code>npm start -- --mode dp</code> で、動的計画法（DP）と貪欲法による体力・魔力の配分を比べる。</p>
+        </section>
+
+        <!-- 2. 出発点 -->
+        <section class="step" id="start">
+          <h2>出発点</h2>
+          <p>演習用コード <code>examples/ch03/starter</code> から始める。第2章の完成版に、探索・経路の分析・計画の実行・DP を加えたものである。BFSとダイクストラ法は完成した状態で入っている。<strong>A* は未実装</strong>で、比較表のA*の行には「未実装」と表示される。</p>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>cp -r examples/ch03/starter my-ch03
+cd my-ch03
+npm ci
+npm start</code></pre>
+          </figure>
+          <p>第2章の完成版との主な差分：</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>変更</th><th>内容</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/planner/search/</code></td><td>新規</td><td>汎用の探索。<code>SearchProblem&lt;S&gt;</code> だけを知り、世界のことは知らない（<code>bfs</code>、<code>dijkstra</code>、<code>astar</code>）</td></tr>
+                <tr><td><code>src/planner/worldProblem.ts</code></td><td>新規</td><td>世界状態を探索問題にする <code>makeWorldProblem</code>、状態の同一性 <code>stateKey</code></td></tr>
+                <tr><td><code>src/planner/heuristics.ts</code></td><td>新規</td><td>A* のヒューリスティック <code>manhattanToPlace</code></td></tr>
+                <tr><td><code>src/planner/allocate.ts</code></td><td>新規</td><td>DP による資源配分 <code>allocate</code>、比較用の貪欲法</td></tr>
+                <tr><td><code>src/analysis/routes.ts</code></td><td>新規</td><td>経路の識別子 <code>routeSignature</code>、解決経路の列挙 <code>listRoutes</code></td></tr>
+                <tr><td><code>src/sim/executePlan.ts</code></td><td>新規</td><td>計画を実行して出来事の列を作る</td></tr>
+                <tr><td><code>src/content/cliffValley.ts</code></td><td>新規</td><td>崖の谷の地図と行為。移動の行為は <code>walkActions</code> で道から生成する</td></tr>
+                <tr><td><code>src/domain/types.ts</code></td><td>変更</td><td><code>Goal</code>、<code>DecisionRecord</code>、出来事の種類 <code>plan</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>第2章以前の機能は <code>--mode cliff</code>・<code>--mode battle</code>・<code>--mode adventure</code> で引き続き動く。</p>
+        </section>
+
+        <!-- 3. 演習 -->
+        <section class="step" id="exercise">
+          <h2>演習</h2>
+          <p>動作例を見る → 条件と地図を改造する → A* と新しい経路を自力で追加する → 完成版と照合する、の順に進める。各探索法の考え方とコピーして動く短い例は<a href="#knowledge">必要な知識</a>にある。演習 3-3 の前に読んでおく。</p>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 3-1 動作例を見る</p>
+            <p class="files">実行するコマンド：<code>npm start</code>、<code>npm start -- --algo all</code></p>
+            <p>比較表と実行ログを読み、次の問いに答える。</p>
+            <ol>
+              <li>BFSが「崖を直接よじ登る」を選ぶのはなぜか。BFSは何を最小にしているか。</li>
+              <li>ダイクストラ法は、なぜ物置小屋まで遠回りするのか。体力の合計を、3つの解決経路で比べる。</li>
+              <li>ログの <code>[0]</code> 行の「候補3通り」は、出力のどの部分と対応しているか。</li>
+            </ol>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 3-2 条件と地図を改造する</p>
+            <p class="files">実行するコマンド：<code>npm start -- --climb 2</code> など。編集するファイル：<code>src/content/cliffValley.ts</code></p>
+            <ol>
+              <li><code>--climb 2</code>、<code>--climb 1</code>、<code>--stamina 10</code>、<code>--stamina 6</code> で実行し、<a href="#goal">今回作るもの</a>の表と見比べる。体力10のとき、BFSが直接登る経路を選ばなくなる理由を説明する。</li>
+              <li><code>paths</code> から、村の西・南・東の「寄り道」（麦畑・石橋・川辺へ続く9本の道）をコメントにして実行する。ダイクストラ法の展開ノード数は 18 から 9 に、A* は 11 から 8 に減る。寄り道が、なぜダイクストラ法により大きく効くのかを考える。確かめたら元に戻す。</li>
+            </ol>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 3-3 A* を実装する（演習2）</p>
+            <p class="files">編集するファイル：<code>src/planner/search/astar.ts</code>（<code>TODO</code>）</p>
+            <p><code>dijkstra.ts</code> を写し、次の3点を変える。</p>
+            <ol>
+              <li>ノードに <code>h</code>（<code>p.heuristic?.(s) ?? 0</code>）と <code>f = g + weight × h</code> を持たせる。<code>weight</code> の既定値は 1。</li>
+              <li>開集合から取り出すノードを、<code>f</code> が小さい順、同じなら <code>h</code> が小さい順、それも同じなら追加した順で選ぶ。</li>
+              <li>目標判定（取り出したとき）、処理済みの状態を捨てること、より小さい <code>g</code> のときだけ追加すること、<code>expanded</code>・<code>generated</code> の数え方は、ダイクストラ法と同じにする。</li>
+            </ol>
+            <!-- snippet:examples/ch03/solution/src/planner/search/dijkstra.ts#dijkstra -->
+            <figure class="code">
+              <figcaption>src/planner/search/dijkstra.ts（手本）</figcaption>
+<pre><code>/**
+ * ダイクストラ法。コストの和が最小の計画を返す。
+ * - 開集合は配列とし、取り出すたびに g が最小のものを選ぶ（同じなら追加した順）。
+ * - 目標判定はノードを取り出したときに行う。処理済みの状態は捨てる。
+ * - より小さい g が見つかったときだけ、開集合に追加する。
+ */
+export function dijkstra&lt;S&gt;(p: SearchProblem&lt;S&gt;, opts: SearchOptions = {}): SearchResult&lt;S&gt; {
+  const max = opts.maxExpanded ?? Infinity;
+  const start: SearchNode&lt;S&gt; = { state: p.start, key: p.key(p.start), g: 0, parent: null, action: null };
+  const open: SearchNode&lt;S&gt;[] = [start];
+  const bestG = new Map&lt;string, number&gt;([[start.key, 0]]);
+  const closed = new Set&lt;string&gt;();
+  let expanded = 0;
+  let generated = 1;
+
+  while (open.length &gt; 0) {
+    // 最小の g を持つノードを選ぶ。同じ g なら先に追加したもの（配列の前の方）を選ぶ。
+    let best = 0;
+    for (let i = 1; i &lt; open.length; i++) {
+      if ((open[i]?.g ?? Infinity) &lt; (open[best]?.g ?? Infinity)) best = i;
+    }
+    const node = open.splice(best, 1)[0];
+    if (node === undefined) break;
+    if (closed.has(node.key)) continue; // 処理済みの状態は捨てる
+    if (p.isGoal(node.state)) return resultOf(node, expanded, generated);
+    if (expanded &gt;= max) break;
+    closed.add(node.key);
+    expanded++;
+
+    for (const s of p.successors(node.state)) {
+      const key = p.key(s.state);
+      if (closed.has(key)) continue;
+      const g = node.g + s.cost;
+      if (g &gt;= (bestG.get(key) ?? Infinity)) continue;
+      bestG.set(key, g);
+      open.push({ state: s.state, key, g, parent: node, action: s.action });
+      generated++;
+    }
+  }
+  return resultOf&lt;S&gt;(null, expanded, generated);
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p>実装したら <code>npm start</code> の比較表で、A*（重み1）の展開が 11、A*（重み3）の展開が 4 になることを確かめる。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 3-4 浮遊の魔法の経路を加える（演習1）</p>
+            <p class="files">編集するファイル：<code>src/content/cliffValley.ts</code>（2か所の <code>TODO</code>）</p>
+            <p>能力「浮遊」（<code>levitate</code>）と、行為 <code>cast:levitate</code>（崖下にいる・浮遊Lv1以上、効果：行為者を崖上へ、コスト：魔力4）を加える。テストは、アリアに浮遊1と魔力6を与え、体力と魔力の両方に重み1を付けて確かめる。</p>
+            <ul>
+              <li>解決経路が4通りになり、新しい経路 <code>{cap:levitate}</code> が現れる。</li>
+              <li>ダイクストラ法の計画が、歩いて崖下へ行き魔法を使う経路（体力2＋魔力4＝コスト6）に変わる。</li>
+            </ul>
+            <p>重みを2つの資源に付けるときは、資源を状態（<code>stateKey</code>）から外さない。<code>makeWorldProblem</code> がこれを自動で切り替える（<a href="#knowledge-state">状態に何を含めるか</a>）。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 3-5 完成版と照合する</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>npm run test:exercises   # 演習 3-3・3-4 のテスト
+npm run check</code></pre>
+            </figure>
+            <p>テストが通ったら、完成版の A* と見比べる。比較の関数を1つにまとめると、選び方の規則（f → h → 追加順）が読みやすくなる。</p>
+            <!-- snippet:examples/ch03/solution/src/planner/search/astar.ts#astar -->
+            <figure class="code">
+              <figcaption>完成版 src/planner/search/astar.ts</figcaption>
+<pre><code>/**
+ * A*。f = g + weight × h が最小のノードから展開する。
+ * - weight = 1 で、h が許容的なら、最適な計画を返す。weight &gt; 1 では最適とは限らない。
+ * - 比較は f、同じなら h の小さい方、それも同じなら追加した順。
+ * - 目標判定・処理済みの扱い・追加の条件は、ダイクストラ法と同じ。
+ */
+export function astar&lt;S&gt;(p: SearchProblem&lt;S&gt;, opts: SearchOptions &amp; { weight?: number } = {}): SearchResult&lt;S&gt; {
+  const max = opts.maxExpanded ?? Infinity;
+  const weight = opts.weight ?? 1;
+  const h = (s: S): number =&gt; p.heuristic?.(s) ?? 0;
+  const node0 = (state: S, key: string, g: number, parent: SearchNode&lt;S&gt; | null, action: string | null): AStarNode&lt;S&gt; =&gt; {
+    const hv = h(state);
+    return { state, key, g, parent, action, h: hv, f: g + weight * hv };
+  };
+
+  const start = node0(p.start, p.key(p.start), 0, null, null);
+  const open: AStarNode&lt;S&gt;[] = [start];
+  const bestG = new Map&lt;string, number&gt;([[start.key, 0]]);
+  const closed = new Set&lt;string&gt;();
+  let expanded = 0;
+  let generated = 1;
+
+  const better = (a: AStarNode&lt;S&gt;, b: AStarNode&lt;S&gt;): boolean =&gt; a.f &lt; b.f || (a.f === b.f &amp;&amp; a.h &lt; b.h);
+
+  while (open.length &gt; 0) {
+    let best = 0;
+    for (let i = 1; i &lt; open.length; i++) {
+      const a = open[i];
+      const b = open[best];
+      if (a !== undefined &amp;&amp; b !== undefined &amp;&amp; better(a, b)) best = i;
+    }
+    const node = open.splice(best, 1)[0];
+    if (node === undefined) break;
+    if (closed.has(node.key)) continue;
+    if (p.isGoal(node.state)) return resultOf(node, expanded, generated);
+    if (expanded &gt;= max) break;
+    closed.add(node.key);
+    expanded++;
+
+    for (const s of p.successors(node.state)) {
+      const key = p.key(s.state);
+      if (closed.has(key)) continue;
+      const g = node.g + s.cost;
+      if (g &gt;= (bestG.get(key) ?? Infinity)) continue;
+      bestG.set(key, g);
+      open.push(node0(s.state, key, g, node, s.action));
+      generated++;
+    }
+  }
+  return resultOf&lt;S&gt;(null, expanded, generated);
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <!-- snippet:examples/ch03/solution/src/content/cliffValley.ts#levitate-action -->
+            <figure class="code">
+              <figcaption>完成版 src/content/cliffValley.ts（行為 cast:levitate）</figcaption>
+<pre><code>{
+  id: 'cast:levitate',
+  label: '浮遊の魔法で崖上へ',
+  kind: 'behavioral',
+  pre: [
+    { type: 'at', of: '$actor', place: 'cliff-bottom' },
+    { type: 'capability', of: '$actor', id: 'levitate', min: 1 },
+  ],
+  effects: [{ type: 'moveTo', of: '$actor', to: 'cliff-top' }],
+  cost: { mana: 4 },
+},</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 3-6 DP で体力と魔力を配分する</p>
+            <p class="files">実行するコマンド：<code>npm start -- --mode dp</code>。編集するファイル：<code>src/content/obstacleCourse.ts</code></p>
+            <p>山道に障害が3つ続き、それぞれ3つの越え方から1つを選ぶ。予算の中で、かかる時間の合計を最小にする。</p>
+            <!-- output:ch03#dp -->
+            <figure class="game-log">
+              <figcaption>冒険の記録 <small>完成版の出力例（npm start -- --mode dp）</small></figcaption>
+<pre># seed: - / mode: dp
+
+== 山道の障害と越え方（体力, 魔力, 時間） ==
+崖      : 登る (4, 0, 3) / 浮遊 (0, 3, 1) / 遠回り (1, 0, 6)
+急流    : 泳ぐ (5, 0, 2) / 凍結の魔法 (0, 4, 1) / 浅瀬を探す (2, 0, 5)
+茨の壁  : 切り開く (3, 0, 2) / 炎の魔法 (0, 2, 1) / 迂回 (1, 0, 4)
+
+== 予算ごとの配分（DP と貪欲法） ==
+予算（体力7, 魔力4）
+  DP    : 登る・凍結の魔法・切り開く    時間6（部分問題10個）
+  貪欲法: 浮遊・泳ぐ・迂回              時間7  ← 先に魔力を使い切り、後で遅い手しか残らない
+予算（体力8, 魔力5）
+  DP    : 浮遊・泳ぐ・炎の魔法          時間4（部分問題10個）
+  貪欲法: 浮遊・泳ぐ・炎の魔法          時間4
+予算（体力3, 魔力2）
+  DP    : 遠回り・浅瀬を探す・炎の魔法  時間12（部分問題3個）
+  貪欲法: 遠回り・浅瀬を探す・炎の魔法  時間12
+予算（体力0, 魔力9）
+  DP    : 浮遊・凍結の魔法・炎の魔法    時間3（部分問題3個）
+  貪欲法: 浮遊・凍結の魔法・炎の魔法    時間3
+予算（体力2, 魔力1）
+  DP    : 越えられない
+  貪欲法: 越えられない</pre>
+            </figure>
+            <!-- /output -->
+            <ol>
+              <li>予算（体力7, 魔力4）で、貪欲法が最善にならない理由を、選んだ越え方の順に追って説明する。</li>
+              <li><code>budgets</code> に予算を1つ足し、貪欲法が負ける別の予算を探す。DPの結果は、全組合せ（27通り）を調べた結果と一致することがテストで保証されている。</li>
+            </ol>
+            <!-- snippet:examples/ch03/solution/src/planner/allocate.ts#allocate -->
+            <figure class="code">
+              <figcaption>src/planner/allocate.ts</figcaption>
+<pre><code>/**
+ * 動的計画法による資源配分。予算の中で、かかる時間の合計を最小にする越え方を選ぶ。
+ * 部分問題 f(i, s, m) =「i番目以降の障害を、残り体力 s・残り魔力 m で越えるときの最小時間」。
+ * (i, s, m) をキーにメモ化する。越えられないときは null を返す。
+ */
+export function allocate(obstacles: Obstacle[], budget: Budget): Allocation | null {
+  const memo = new Map&lt;string, { time: number; choice: number }&gt;();
+
+  const f = (i: number, s: number, m: number): number =&gt; {
+    const obstacle = obstacles[i];
+    if (obstacle === undefined) return 0; // すべて越えた
+    const key = `${i},${s},${m}`;
+    const hit = memo.get(key);
+    if (hit !== undefined) return hit.time;
+
+    let best = { time: Infinity, choice: -1 };
+    obstacle.options.forEach((o, k) =&gt; {
+      if (!fits(o, s, m)) return;
+      const t = o.time + f(i + 1, s - o.stamina, m - o.mana);
+      if (t &lt; best.time) best = { time: t, choice: k }; // 同じ時間なら先に書かれた越え方
+    });
+    memo.set(key, best);
+    return best.time;
+  };
+
+  const total = f(0, budget.stamina, budget.mana);
+  if (total === Infinity) return null;
+
+  // メモをたどって、選んだ越え方を復元する。
+  const choices: ActionId[] = [];
+  let s = budget.stamina;
+  let m = budget.mana;
+  obstacles.forEach((obstacle, i) =&gt; {
+    const entry = memo.get(`${i},${s},${m}`);
+    const o = entry === undefined ? undefined : obstacle.options[entry.choice];
+    if (o === undefined) return;
+    choices.push(o.actionId);
+    s -= o.stamina;
+    m -= o.mana;
+  });
+  return { choices, totalTime: total, states: memo.size };
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 3-A 経路の数え方を変える</p>
+            <p>演習 3-4 を解いた後、<code>routeSignature</code> から能力（<code>cap:</code>）を外して <code>listRoutes</code> を実行する。物を使わない浮遊の経路の識別子は空集合になり、空集合は他のすべての識別子に含まれるので、極小なものは浮遊の経路だけになる。「経路をどう数えるか」が設計上の選択であることを、結果で確かめる。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 3-B 状態に体力を含めた BFS</p>
+            <p><code>makeWorldProblem</code> は、体力だけを最小化するとき、体力を <code>stateKey</code> から外す。BFSでも体力を状態に含めるように変えると、展開ノード数と、体力が厳しいときの結果はどう変わるか。ダイクストラ法では外しても最適性が保たれる理由と比べる。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 3-C 開集合を二分ヒープにする</p>
+            <p>ダイクストラ法とA*の開集合は、取り出すたびに配列全体を走査している。二分ヒープに置き換え、同点の処理（f → h → 追加順）を保ったまま、展開ノード数がまったく変わらないことをテストで確かめる。</p>
+          </div>
+        </section>
+
+        <!-- 4. 必要な知識 -->
+        <section class="step" id="knowledge">
+          <h2>必要な知識</h2>
+
+          <div class="knowledge">
+            <p class="box-label">状態空間：世界の「もしも」をグラフにする</p>
+            <p>世界状態を頂点、使える行為を辺とみなすと、計画を立てることは「開始の頂点から、目標を満たす頂点への道」を探すことになる。辺の重みは行為のコスト（体力）である。<code>makeWorldProblem</code> は、第2章の <code>availableAffordances</code> と <code>applyAction</code> を使って、この見方を作る。</p>
+            <!-- snippet:examples/ch03/solution/src/planner/search/types.ts#SearchProblem -->
+            <figure class="code">
+              <figcaption>src/planner/search/types.ts（探索のインタフェース）</figcaption>
+<pre><code>export interface Successor&lt;S&gt; {
+  action: string;
+  state: S;
+  cost: number;
+}
+
+export interface SearchProblem&lt;S&gt; {
+  start: S;
+  isGoal(s: S): boolean;
+  /** 後続の状態。順序は決定的であること。 */
+  successors(s: S): Successor&lt;S&gt;[];
+  /** 状態の同一性を表す文字列。 */
+  key(s: S): string;
+  /** A* 用のヒューリスティック（残りコストの見積もり）。 */
+  heuristic?(s: S): number;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p>探索法はこのインタフェースしか知らない。そのため、探索法の単体テストは、世界の代わりに5頂点の小さなグラフで書ける（<code>tests/helpers/graph.ts</code>）。</p>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">幅優先探索（BFS）：辺の数が最小の道</p>
+            <p>先に入れたものから取り出すキューを使い、近い頂点から順に広げる。一度見た頂点は二度と入れない。最初に目標を取り出したときの道は、辺の数（手数）が最小である。コストは見ない。</p>
+            <figure class="code">
+              <figcaption>bfs.ts（<code>npx tsx bfs.ts</code> で動く）</figcaption>
+<pre><code>// 幅優先探索：辺の数が最小の経路を求める
+const graph: Record&lt;string, string[]&gt; = {
+  村: ['分かれ道', '麦畑'],
+  麦畑: ['村'],
+  分かれ道: ['村', '崖下'],
+  崖下: ['分かれ道', '崖上'],
+  崖上: [],
+};
+
+function bfs(start: string, goal: string): string[] | null {
+  const queue: string[][] = [[start]]; // 経路そのものをキューに入れる
+  const seen = new Set([start]);
+  while (queue.length &gt; 0) {
+    const path = queue.shift()!; // 先に入れたものから取り出す
+    const here = path[path.length - 1]!;
+    if (here === goal) return path; // 取り出したときに目標判定
+    for (const next of graph[here] ?? []) {
+      if (seen.has(next)) continue; // 一度見た場所は二度と入れない
+      seen.add(next);
+      queue.push([...path, next]);
+    }
+  }
+  return null;
+}
+
+console.log(bfs('村', '崖上')?.join('→')); // 村→分かれ道→崖下→崖上</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">ダイクストラ法：重みの和が最小の道</p>
+            <p>開始からのコスト <code>g</code> が最小のものを先に取り出す。辺の重みが0以上なら、目標を最初に取り出したときの <code>g</code> が最小のコストである。一度取り出した（処理済みの）頂点に、後から来たものは捨てる。</p>
+            <figure class="code">
+              <figcaption>dijkstra.ts</figcaption>
+<pre><code>// ダイクストラ法：重み（コスト）の和が最小の経路を求める
+const edges: Record&lt;string, [string, number][]&gt; = {
+  崖下: [['崖上', 9], ['物置小屋', 1], ['岩棚', 3]],
+  物置小屋: [['鉤縄の下', 2]],
+  鉤縄の下: [['崖上', 2]],
+  岩棚: [['崖上', 3]],
+  崖上: [],
+};
+
+function dijkstra(start: string, goal: string): { path: string[]; cost: number } | null {
+  const open = [{ node: start, g: 0, path: [start] }];
+  const done = new Set&lt;string&gt;();
+  while (open.length &gt; 0) {
+    open.sort((a, b) =&gt; a.g - b.g); // g が最小のものを先頭に（教材のコードは配列を走査して選ぶ）
+    const cur = open.shift()!;
+    if (done.has(cur.node)) continue; // 処理済みは捨てる
+    if (cur.node === goal) return { path: cur.path, cost: cur.g };
+    done.add(cur.node);
+    for (const [next, w] of edges[cur.node] ?? []) {
+      open.push({ node: next, g: cur.g + w, path: [...cur.path, next] });
+    }
+  }
+  return null;
+}
+
+console.log(dijkstra('崖下', '崖上')); // 物置小屋を回る経路、コスト5</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">A* とヒューリスティック：見当をつけて探す</p>
+            <p>A* は <code>f = g + h</code> が最小のものから取り出す。<code>h</code>（ヒューリスティック）は「目標まで、あとどれくらいかかりそうか」の見積もりである。<code>h</code> が実際の残りコストを超えない（<strong>許容的</strong>）なら、A* はダイクストラ法と同じ最適な答えを返し、目標から遠ざかる方向をあまり展開しない。<code>h(s) ≦ 辺のコスト + h(s′)</code>（<strong>無矛盾</strong>）も満たせば、処理済みの頂点を捨てても最適性が崩れない。<code>f = g + w × h</code> の重み <code>w</code> を1より大きくすると、展開は減るが、最適とは限らなくなる。</p>
+            <figure class="code">
+              <figcaption>astar.ts</figcaption>
+<pre><code>// A*：f = g + h が最小のものから取り出す。h は「あとどれくらいか」の見積もり
+const pos: Record&lt;string, [number, number]&gt; = {
+  S: [0, 0], A: [1, 0], B: [2, 0], C: [0, 1], D: [0, 2], G: [3, 0],
+};
+const nbr: Record&lt;string, string[]&gt; = { S: ['A', 'C'], A: ['B'], B: ['G'], C: ['D'], D: [], G: [] };
+
+const h = (n: string): number =&gt; {
+  const [x, y] = pos[n]!;
+  const [gx, gy] = pos.G!;
+  return Math.abs(x - gx) + Math.abs(y - gy); // マンハッタン距離
+};
+
+function search(useH: boolean): number {
+  const open = [{ node: 'S', g: 0 }];
+  const done = new Set&lt;string&gt;();
+  let expanded = 0;
+  while (open.length &gt; 0) {
+    open.sort((a, b) =&gt; a.g + (useH ? h(a.node) : 0) - (b.g + (useH ? h(b.node) : 0)));
+    const cur = open.shift()!;
+    if (done.has(cur.node)) continue;
+    if (cur.node === 'G') return expanded;
+    done.add(cur.node);
+    expanded++;
+    for (const n of nbr[cur.node] ?? []) open.push({ node: n, g: cur.g + 1 });
+  }
+  return expanded;
+}
+
+console.log('h なし（ダイクストラ法）の展開数:', search(false)); // 5
+console.log('h あり（A*）の展開数:', search(true)); // 3</code></pre>
+            </figure>
+            <p>崖の谷では、場所の座標（<code>params.x</code>・<code>params.y</code>）から、マンハッタン距離に「目標の場所にいなければ1」を足したものを <code>h</code> にする。歩く行為はどれもコスト1で距離を1だけ縮め、崖を越える行為はどれもコスト1以上なので、許容的かつ無矛盾である。テスト（<code>heuristics.test.ts</code>）は、到達できるすべての状態と辺でこれを確かめる。</p>
+            <!-- snippet:examples/ch03/solution/src/planner/heuristics.ts#manhattanToPlace -->
+            <figure class="code">
+              <figcaption>src/planner/heuristics.ts</figcaption>
+<pre><code>/**
+ * 目標の場所までのマンハッタン距離 + （目標の場所にいなければ 1）。
+ * 座標は場所の params.x・params.y。歩く行為はどれもコスト1で距離を1だけ縮め、
+ * 崖を越える行為はどれもコスト1以上なので、許容的かつ無矛盾である。
+ */
+export function manhattanToPlace(goalPlaceId: EntityId, actorId: EntityId): (w: WorldState) =&gt; number {
+  return (w) =&gt; {
+    const goal = w.entities[goalPlaceId];
+    const loc = w.entities[actorId]?.location;
+    const here = loc === null || loc === undefined ? undefined : w.entities[loc];
+    if (goal === undefined || here === undefined) return 0;
+    const d = Math.abs(param(here, 'x') - param(goal, 'x')) + Math.abs(param(here, 'y') - param(goal, 'y'));
+    return d + (here.id === goalPlaceId ? 0 : 1);
+  };
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="knowledge" id="knowledge-state">
+            <p class="box-label">状態に何を含めるか</p>
+            <p>探索は「同じ状態」を二度展開しない。何を同じとみなすかは <code>stateKey</code> が決める。体力だけを最小化するときは、行為者の体力を状態から外す。同じ場所・同じ物の配置に、より少ない体力で着いた経路は、残りの体力も多いので、後から着いた経路より常に有利だからである。ダイクストラ法とA*は、コストの小さい順に取り出すので、外しても最適性は保たれる。BFSは手数の順に取り出すので、資源が厳しいと解を取り逃がすことがある（発展 3-B）。</p>
+            <!-- snippet:examples/ch03/solution/src/planner/worldProblem.ts#makeWorldProblem -->
+            <figure class="code">
+              <figcaption>src/planner/worldProblem.ts</figcaption>
+<pre><code>/**
+ * 世界状態を探索問題にする。後続は availableAffordances の順（ActionId の辞書順）に並ぶ。
+ * 単一の資源だけを最小化するときは、その資源（行為者のパラメータ）を stateKey から外す。
+ * 重みを2つ以上の資源に付けるときは、資源を状態から外さない。
+ */
+export function makeWorldProblem(
+  world: WorldState,
+  catalog: Catalog,
+  actorId: EntityId,
+  goal: Goal,
+  opts: { costWeights?: CostWeights; heuristic?: (w: WorldState) =&gt; number } = {},
+): SearchProblem&lt;WorldState&gt; {
+  const weights: CostWeights = opts.costWeights ?? { stamina: 1 };
+  const resources = Object.entries(weights)
+    .filter(([, w]) =&gt; (w ?? 0) &gt; 0)
+    .map(([k]) =&gt; k);
+  const ignore = resources.length === 1 ? [{ entity: actorId, keys: resources }] : [];
+
+  const problem: SearchProblem&lt;WorldState&gt; = {
+    start: world,
+    isGoal: (s) =&gt; goalReached(s, actorId, goal),
+    successors: (s) =&gt;
+      availableAffordances(s, catalog, actorId).map((a) =&gt; ({
+        action: a.actionId,
+        state: applyAction(s, catalog, actorId, a.actionId).world,
+        cost: weightedCost(findAction(catalog, a.actionId).cost, weights),
+      })),
+    key: (s) =&gt; stateKey(s, ignore),
+  };
+  const h = opts.heuristic;
+  if (h !== undefined) problem.heuristic = h;
+  return problem;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">動的計画法（DP）：部分問題の答えを使い回す</p>
+            <p>大きな問題を、同じ形の小さな問題（部分問題）に分け、一度解いた答えをメモして使い回す。資源配分では「i番目以降の障害を、残り体力s・残り魔力mで越えるときの最小時間」を部分問題とし、<code>(i, s, m)</code> をキーにメモする。</p>
+            <figure class="code">
+              <figcaption>dp.ts</figcaption>
+<pre><code>// 動的計画法：同じ部分問題の答えをメモして使い回す
+// 階段を1段か2段ずつ上るとき、n段の上り方は何通りか
+const memo = new Map&lt;number, number&gt;();
+
+function ways(n: number): number {
+  if (n &lt;= 1) return 1;
+  const hit = memo.get(n);
+  if (hit !== undefined) return hit; // 一度解いた部分問題は計算しない
+  const v = ways(n - 1) + ways(n - 2);
+  memo.set(n, v);
+  return v;
+}
+
+console.log(ways(40)); // 165580141
+console.log('メモした部分問題の数:', memo.size); // 39</code></pre>
+            </figure>
+          </div>
+
+          <div class="callout is-note">
+            <p class="box-label">Git：Issue とアルゴリズムのテストケース</p>
+            <p>演習 3-3 を始める前に、やることを Issue（または手元のメモ）に短く書き、受け入れ条件をテストの言葉で並べる。例：「崖の谷（登攀3・体力20）で重み1のとき、計画とコストはダイクストラ法と同じで、展開はダイクストラ法より少ない」。<code>tests/exercises/astar.test.ts</code> は、この受け入れ条件をそのままテストにしたものである。探索のように結果が実装の細部に左右されるコードでは、小さなグラフで手計算できるテストと、本番の例題でのテストの両方を置く。</p>
+          </div>
+        </section>
+
+        <!-- 文献コラム -->
+        <aside class="literature" id="column" aria-labelledby="column-title">
+          <p class="box-label">文献コラム</p>
+          <h3 id="column-title">複合アフォーダンス、認知としての計画、解決経路の数え方</h3>
+          <p>Baker &amp; Roberts（2025）は、それ以上分けない基本（basic）のアフォーダンスと、複数の基本アフォーダンスが揃って初めて成り立つ複合（composite）アフォーダンスを区別した。この章では「行為定義1件＝basic」と固定し、目標に届く行為の列（計画）を composite とみなす。「鉤縄を拾う・掛ける・登る」は、どれか1つでは崖上に届かず、3つが揃って初めて「崖上に行ける」が成り立つ。</p>
+          <p>また、計画・注意・記憶のような<strong>認知的</strong>なアフォーダンスが、行動的なアフォーダンスの組合せを広げると述べた。そこで、計画を立てたこと自体を出来事（<code>type: 'plan'</code>）として記録し、そのとき使えた行為・探索法・展開ノード数・計画が利用した物を <code>DecisionRecord</code> に残す。ログの <code>[0]</code> 行が、アリアの「考えた」という認知的な行為にあたる。</p>
+          <!-- snippet:examples/ch03/solution/src/sim/executePlan.ts#executePlan -->
+          <figure class="code">
+            <figcaption>src/sim/executePlan.ts</figcaption>
+<pre><code>/**
+ * 計画を実行して、出来事の列を作る。
+ * 最初に計画を立てたこと（type: 'plan'、decision 付き）を記録し、続けて行為ごとに出来事を出す。
+ * 計画を立てることは認知的な行為なので、時刻は進めない。
+ */
+export function executePlan(
+  world: WorldState,
+  catalog: Catalog,
+  actorId: EntityId,
+  plan: ActionId[],
+  decision: DecisionRecord,
+): { world: WorldState; events: WorldEvent[] } {
+  const events: WorldEvent[] = [{ t: world.t, type: 'plan', actor: actorId, decision }];
+  let w = world;
+  for (const actionId of plan) {
+    const r = applyAction(w, catalog, actorId, actionId);
+    w = r.world;
+    events.push(r.event);
+  }
+  return { world: w, events };
+}</code></pre>
+          </figure>
+          <!-- /snippet -->
+          <div class="mapping-head" aria-hidden="true"><span>文献の概念</span><span>この章の実装</span></div>
+          <dl class="mapping">
+            <div><dt>basic アフォーダンス</dt><dd>行為定義1件（<code>ActionDef</code>）。第2章の <code>availableAffordances</code> が列挙するもの</dd></div>
+            <div><dt>composite アフォーダンス</dt><dd>目標に届く行為の列（探索の結果 <code>SearchResult.actions</code>）</dd></div>
+            <div><dt>認知的アフォーダンス（計画）</dt><dd><code>type: 'plan'</code> の出来事と <code>DecisionRecord</code>（<code>available</code>、<code>algorithm</code>、<code>expanded</code>、<code>plan</code>、<code>planCost</code>、<code>exploited</code>、<code>routesKnown</code>）</dd></div>
+            <div><dt>能力×環境としてのアフォーダンス</dt><dd>経路の識別子＝計画が利用した物と能力の集合（例：<code>{anchor, cap:climb, rope}</code>）</dd></div>
+            <div><dt>複数の解決経路</dt><dd><code>listRoutes</code>：コストの上限以内で目標に届く経路の識別子のうち、包含について極小なもの</dd></div>
+            <div><dt>重要度の逸脱（Pinchbeck）</dt><dd>作者が「ただの岩」とした岩の突起（<code>play: 1</code>）が、鉤縄の経路の要になる</dd></div>
+          </dl>
+          <p>解決経路を数えるときは、「鉤縄を持ったまま蔦を登る」（<code>{cap:climb, rope, vine}</code>）のような、余計な物を含むだけの計画を別解として数えたくない。そこで、識別子が他の識別子を<strong>含む</strong>ものを除き、極小なものだけを数える。識別子に能力（<code>cap:</code>）を含めるのは、物を使わない浮遊の経路を、空集合ではなく <code>{cap:levitate}</code> として区別するためである（発展 3-A）。</p>
+          <!-- snippet:examples/ch03/solution/src/analysis/routes.ts#routeSignature -->
+          <figure class="code">
+            <figcaption>src/analysis/routes.ts</figcaption>
+<pre><code>/** 経路の識別子：計画が利用した物と能力（cap: を付ける）の集合を、辞書順に並べたもの。 */
+export function routeSignature(plan: ActionId[], catalog: Catalog, world: WorldState): EntityId[] {
+  const all = new Set&lt;string&gt;();
+  for (const id of plan) for (const x of exploitedBy(findAction(catalog, id), world)) all.add(x);
+  return sortIds(all);
+}</code></pre>
+          </figure>
+          <!-- /snippet -->
+          <p>この章の「機転」には限界がある。鉤縄と岩の突起を組み合わせる行為は、作者が行為定義として明示的に書いたものである。作者の想定外の組合せが起こりうるのは、行為の対象をタグで指定する汎用行為を導入する第9章以降になる。</p>
+          <p class="ref">Baker, B. &amp; Roberts, S. (2025). Understanding Agent Complexity Through Affordances. <i>Minds and Machines</i>, 35:51.</p>
+          <p class="ref">Pinchbeck, D. (2009). An affordance based model for gameplay. <i>Proceedings of DiGRA 2009</i>.</p>
+        </aside>
+
+        <!-- 5. 動作確認 -->
+        <section class="step" id="check">
+          <h2>動作確認</h2>
+          <ol>
+            <li>演習 3-3・3-4 を解いた後、<code>npm start</code> の出力が<a href="#goal">今回作るもの</a>の出力例と一致することを確かめる（浮遊の能力を持たないアリアには、浮遊の経路は現れない）。</li>
+            <li>体力を10に減らし、BFSで実行する。</li>
+          </ol>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>npm start -- --algo bfs --stamina 10</code></pre>
+          </figure>
+          <!-- output:ch03#bfs-stamina10 -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>体力10のときの期待ログ</small></figcaption>
+<pre># seed: - / algo: bfs / catalog: cliff-valley@0.1
+# アリア：登攀3・体力10 / 目標：崖上に着く
+
+== 探索法の比較 ==
+探索法          手数  体力  展開  計画
+BFS                4     8    14  村→分かれ道→崖下→蔦をつたって岩棚へ→岩棚から崖上へ
+ダイクストラ法     7     7    18  村→分かれ道→崖下→物置小屋→鉤縄を拾う→崖下→鉤縄を岩の突起に掛ける→鉤縄を登る
+A*（重み1）        7     7    11  村→分かれ道→崖下→物置小屋→鉤縄を拾う→崖下→鉤縄を岩の突起に掛ける→鉤縄を登る
+A*（重み3）        4     8     4  村→分かれ道→崖下→蔦をつたって岩棚へ→岩棚から崖上へ
+
+== 解決経路（体力10以内、包含について極小なもの） ==
+{anchor, cap:climb, rope}   岩の突起・登攀・鉤縄  体力7・7手
+{cap:climb, vine}           登攀・蔦              体力8・4手
+
+== 実行（BFS） ==
+[0] アリアは考えた。蔦を使えば、少ない手数で崖上に行けそうだ。（候補2通り・4手・体力8）
+[1] アリアは村から分かれ道へ歩いた。（体力 10→9）
+[2] アリアは分かれ道から崖下へ歩いた。（体力 9→8）
+[3] アリアは蔦をつたって岩棚へ登った。（体力 8→5 / 蔦の強度 2→1）
+[4] アリアは岩棚から崖上へ這い上がった。（体力 5→2）
+アリアは崖上に立った。（残りの体力 2）</pre>
+          </figure>
+          <!-- /output -->
+          <p>確認する観点：</p>
+          <ul>
+            <li>体力10では、崖下に着いた時点で体力が8しか残らず、直接登る（体力9）は前提条件を満たさない。BFSは次に手数の少ない蔦の経路を選ぶ。解決経路も2通りに減る。</li>
+            <li>ダイクストラ法とA*の計画（鉤縄の経路）は、体力20のときと変わらない。</li>
+            <li>ログの <code>[0]</code> 行の言い回しが、探索法によって変わる（BFS：「少ない手数で」、ダイクストラ法：「少ない体力で」、重みつきA*：「ざっと考えた」）。</li>
+          </ul>
+        </section>
+
+        <!-- 6. テスト -->
+        <section class="step" id="test">
+          <h2>テスト</h2>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>npm test                # 既定のテスト
+npm run test:exercises  # 演習用テスト（演習 3-3・3-4 を解くまで失敗する）
+npm run check           # 型チェック → テスト</code></pre>
+          </figure>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>確かめること</th></tr></thead>
+              <tbody>
+                <tr><td><code>search.bfs.test.ts</code>、<code>search.dijkstra.test.ts</code></td><td>5頂点の抽象グラフで、BFSは辺の数が最小、ダイクストラ法は重みの和が最小の経路を返す。到達できない目標では <code>found: false</code>。展開・生成の数え方</td></tr>
+                <tr><td><code>worldProblem.test.ts</code></td><td>崖の谷で、BFS＝3手・体力11、ダイクストラ法＝7手・体力7。登攀・体力を変えたときの計画。展開ノード数のスナップショット。同じ入力から同じ結果（決定性）</td></tr>
+                <tr><td><code>heuristics.test.ts</code></td><td>到達できるすべての状態と辺で <code>h(s) ≦ cost + h(s′)</code>、目標で <code>h = 0</code></td></tr>
+                <tr><td><code>routes.test.ts</code></td><td>登攀3で3通り、登攀2で2通り、登攀1で1通りの解決経路</td></tr>
+                <tr><td><code>allocate.test.ts</code></td><td>5つの予算での DP と貪欲法の結果。体力0〜12・魔力0〜10のすべての予算で、DP が全組合せの結果と一致する</td></tr>
+                <tr><td><code>executePlan.test.ts</code></td><td>最初が計画の出来事で、最後にアリアは崖上、鉤縄は掛かっている</td></tr>
+                <tr><td><code>exercises/astar.test.ts</code></td><td>h = 0 ならダイクストラ法と同じ。重み1で展開がダイクストラ法より少ない。重み3で体力8・展開がさらに少ない。展開ノード数のスナップショット</td></tr>
+                <tr><td><code>exercises/levitate-route.test.ts</code></td><td>解決経路が4通りになり <code>{cap:levitate}</code> が現れる。ダイクストラ法の計画がコスト6の浮遊の経路になる</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>展開ノード数は、同点の処理など実装の細部に依存する。そのためテストでは、計画とコストを正確な値で、展開ノード数を大小関係とスナップショットで確かめる。</p>
+        </section>
+
+        <!-- 7. 完成版コード -->
+        <section class="step" id="solution">
+          <h2>完成版コード</h2>
+          <p><a href="https://github.com/aituber-akari/reading-rpg-course/tree/main/examples/ch03/solution">examples/ch03/solution</a> に、この章の最終状態がある。README の手順（<code>npm ci</code> → <code>npm start</code>）で起動できる。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/planner/search/</code></td><td>汎用の探索。世界のことを知らない（依存の規則を <code>architecture.test.ts</code> で確かめる）</td></tr>
+                <tr><td><code>src/planner/worldProblem.ts</code></td><td>世界状態を探索問題にする。辺のコスト＝Σ（重み×行為のコスト）</td></tr>
+                <tr><td><code>src/analysis/routes.ts</code></td><td>研究用の指標。ゲームの規則には使わない</td></tr>
+                <tr><td><code>src/sim/executePlan.ts</code></td><td>計画を実行し、計画の出来事と行為の出来事の列を作る</td></tr>
+                <tr><td><code>src/planner/allocate.ts</code></td><td>DP と貪欲法による資源配分</td></tr>
+                <tr><td><code>src/ui/plan.ts</code>、<code>src/ui/dp.ts</code></td><td>比較表・解決経路・実行ログを組み立てる</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- snippet:examples/ch03/solution/src/analysis/routes.ts#listRoutes -->
+          <figure class="code">
+            <figcaption>src/analysis/routes.ts（解決経路の列挙）</figcaption>
+<pre><code>/**
+ * コストの上限以内で目標に届く経路の識別子を集め、包含について極小なものだけを返す。
+ * 状態と「これまでに使った物の集合」の組を状態とする均一コスト探索を行い、目標に着いても探索を止めない。
+ * 返す順序は、コスト → 識別子の順。
+ */
+export function listRoutes(
+  world: WorldState,
+  catalog: Catalog,
+  actorId: EntityId,
+  goal: Goal,
+  opts: { maxCost: number; costWeights?: CostWeights },
+): Route[] {
+  const problem = makeWorldProblem(
+    world,
+    catalog,
+    actorId,
+    goal,
+    opts.costWeights === undefined ? {} : { costWeights: opts.costWeights },
+  );
+  const keyOf = (w: WorldState, used: string[]): string =&gt; `${problem.key(w)}|${used.join(',')}`;
+  const open: RouteNode[] = [{ world, key: keyOf(world, []), g: 0, used: [], plan: [] }];
+  const closed = new Set&lt;string&gt;();
+  const found = new Map&lt;string, Route&gt;();
+
+  while (open.length &gt; 0) {
+    let best = 0;
+    for (let i = 1; i &lt; open.length; i++) if ((open[i]?.g ?? Infinity) &lt; (open[best]?.g ?? Infinity)) best = i;
+    const node = open.splice(best, 1)[0];
+    if (node === undefined) break;
+    if (closed.has(node.key)) continue;
+    closed.add(node.key);
+
+    if (problem.isGoal(node.world)) {
+      const sig = node.used.join(',');
+      if (!found.has(sig)) found.set(sig, { signature: node.used, plan: node.plan, cost: node.g });
+      continue; // 目標から先へは伸ばさない（物が増えるだけで、極小にはならない）
+    }
+    for (const s of problem.successors(node.world)) {
+      const g = node.g + s.cost;
+      if (g &gt; opts.maxCost) continue;
+      const used = sortIds(new Set([...node.used, ...exploitedBy(findAction(catalog, s.action), node.world)]));
+      const key = keyOf(s.state, used);
+      if (!closed.has(key)) open.push({ world: s.state, key, g, used, plan: [...node.plan, s.action] });
+    }
+  }
+
+  const routes = [...found.values()];
+  const isSubset = (a: string[], b: string[]): boolean =&gt; a.every((x) =&gt; b.includes(x));
+  const minimal = routes.filter(
+    (r) =&gt; !routes.some((o) =&gt; o !== r &amp;&amp; o.signature.length &lt; r.signature.length &amp;&amp; isSubset(o.signature, r.signature)),
+  );
+  return minimal.sort((a, b) =&gt; a.cost - b.cost || (a.signature.join() &lt; b.signature.join() ? -1 : 1));
+}</code></pre>
+          </figure>
+          <!-- /snippet -->
+        </section>
+
+        <!-- 8. 振り返り -->
+        <section class="step" id="review">
+          <h2>振り返り</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ゲーム上の機能</th><th>習得した技術</th></tr></thead>
+              <tbody>
+                <tr><td>目標に届く行為の列（計画）</td><td>状態空間、汎用の探索インタフェース（<code>SearchProblem&lt;S&gt;</code>）</td></tr>
+                <tr><td>手数の少ない計画／体力の少ない計画</td><td>BFS、ダイクストラ法</td></tr>
+                <tr><td>少ない探索で見つかる計画</td><td>A*、許容的・無矛盾なヒューリスティック、重みつきA*</td></tr>
+                <tr><td>「候補3通り」と経路の識別子</td><td>集合の包含による極小元の選び出し</td></tr>
+                <tr><td>「アリアは考えた」というログ</td><td>認知的な行為の記録（<code>DecisionRecord</code>）</td></tr>
+                <tr><td>体力と魔力の配分</td><td>動的計画法、メモ化、貪欲法との比較</td></tr>
+                <tr><td>再現できる計画</td><td>列挙順と同点処理の固定、アルゴリズムのテストケース、スナップショット</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>第1部の次の章（第4章）では、同じ出来事の列から、詳細と簡潔の2通りのログを作り、読み手が受け取る物語の違いを観察する。</p>
+        </section>
+
+      </div>
+
+      <nav class="pager" aria-label="前後の章">
+        <a class="prev" href="ch02.html" rel="prev"><span class="dir">← 前の章</span>第2章 障害を乗り越える</a>
+        <a class="next" href="../parts/part1.html" rel="next"><span class="dir">次へ →</span>第1部の概要（第4章は準備中）</a>
+      </nav>
+      <p class="pager-hint"><kbd>←</kbd> <kbd>→</kbd> キーでも前後の章へ移動できます</p>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

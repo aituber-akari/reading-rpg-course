@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>序章 最初の冒険を動かす｜読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="冒険者が村を出発し、移動し、敵と遭遇するログを出すプログラムを動かし、改造する。TypeScriptの最小の文法とGitの最初のコミット。">
+  <link rel="prev" href="../index.html">
+  <link rel="next" href="ch01.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../assets/course.css">
+  <script src="../assets/course.js" defer></script>
+</head>
+<body>
+<!-- コード片と出力例は完成版から同期する（docs/design/snippets.md）。目印の中身は手で直さない。 -->
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="../index.html">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<div class="layout">
+
+  <details class="drawer global-nav" data-open-from="56em">
+    <summary>全体目次</summary>
+    <nav class="drawer-body" aria-label="全体目次">
+      <p class="nav-heading">全体目次</p>
+      <ol class="toc-list">
+        <li><a href="../index.html">トップページ</a></li>
+        <li><a href="ch00.html" aria-current="page">序章 最初の冒険を動かす</a></li>
+        <li><span class="part-label">第1部 一瞬の行動</span>
+          <ol>
+            <li><a href="../parts/part1.html">第1部の概要</a></li>
+            <li><a href="ch01.html">第1章 戦闘する冒険者</a></li>
+            <li><a href="ch02.html">第2章 障害を乗り越える</a></li>
+            <li><a href="ch03.html">第3章 機転を利かせる</a></li>
+            <li><span class="is-pending">第4章 行動を読ませる</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第2部 キャラクターの人生</span>
+          <ol>
+            <li><span class="is-pending">第5章 意志を持つ冒険者</span></li>
+            <li><span class="is-pending">第6章 記憶する冒険者</span></li>
+            <li><span class="is-pending">第7章 成長する冒険者</span></li>
+            <li><span class="is-pending">第8章 一人の人生</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第3部 世界の歴史</span>
+          <ol>
+            <li><span class="is-pending">第9章 世界を生成する</span></li>
+            <li><span class="is-pending">第10章 世界に人を住まわせる</span></li>
+            <li><span class="is-pending">第11章 世界を変化させる</span></li>
+            <li><span class="is-pending">第12章 歴史を記録する</span></li>
+          </ol>
+        </li>
+        <li><span class="part-label">第4部 読むRPGへ統合</span>
+          <ol>
+            <li><span class="is-pending">第13章 ゲーム画面を作る</span></li>
+            <li><span class="is-pending">第14章 世界を保存する</span></li>
+            <li><span class="is-pending">第15章 時間を進める</span></li>
+            <li><span class="is-pending">第16章 公開する</span></li>
+          </ol>
+        </li>
+        <li><a href="../references/affordance.html">設計思想：アフォーダンス</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <details class="drawer page-toc" data-open-from="75em">
+    <summary>この章の内容</summary>
+    <nav class="drawer-body" aria-label="この章の内容">
+      <p class="nav-heading">この章の内容</p>
+      <ol class="toc-list">
+        <li><a href="#goal">1. 今回作るもの</a></li>
+        <li><a href="#start">2. 出発点</a></li>
+        <li><a href="#exercise">3. 演習</a></li>
+        <li><a href="#knowledge">4. 必要な知識</a></li>
+        <li><a href="#column">文献コラム</a></li>
+        <li><a href="#check">5. 動作確認</a></li>
+        <li><a href="#test">6. テスト</a></li>
+        <li><a href="#solution">7. 完成版コード</a></li>
+        <li><a href="#review">8. 振り返り</a></li>
+      </ol>
+    </nav>
+  </details>
+
+  <main id="main">
+    <article class="prose">
+
+      <nav class="breadcrumb" aria-label="現在位置">
+        <ol>
+          <li><a href="../index.html">トップ</a></li>
+          <li aria-current="page">序章 最初の冒険を動かす</li>
+        </ol>
+      </nav>
+
+      <header class="chapter-header">
+        <p class="eyebrow">序章</p>
+        <h1>最初の冒険を動かす</h1>
+        <p class="lead">冒険者が村を出発し、森を抜け、敵に出会う。その短い記録を出力するプログラムを動かし、名前やHPや道のりを書き換えて、ログの変わり方を確かめる。最後に「休む」という手順を自分で足す。</p>
+        <ul class="meta-list" aria-label="この章の概要">
+          <li>目安 2〜3時間</li>
+          <li>TypeScript：const/let、型、if、for、配列、オブジェクト、関数</li>
+          <li>Git：最初のコミットと差分</li>
+        </ul>
+      </header>
+
+      <div class="chapter-body">
+
+        <!-- 1. 今回作るもの -->
+        <section class="step" id="goal">
+          <h2>今回作るもの</h2>
+          <p>主人公の設定と道のりを受け取り、出来事を順に処理して、1行ずつのログを出すプログラム（コマンドラインで動く）。完成版をそのまま動かすと、次のように表示される。</p>
+
+          <!-- output:ch00 -->
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>完成版の出力（npm start）</small></figcaption>
+<pre>[1] リナは村を出発した。（HP 12）
+[2] リナは森へ移動した。
+[3] リナはスライムに遭遇した！ HP 12→9
+[4] リナは洞窟の入口へ移動した。
+[5] リナは大コウモリに遭遇した！ HP 9→5</pre>
+          </figure>
+          <!-- /output -->
+
+          <p>期待される動作：</p>
+          <ul>
+            <li>最初に「出発」の出来事が出て、そのときのHPが表示される。</li>
+            <li>敵に遭遇するとHPが敵の強さ（power）だけ減り、減る前と後が表示される。HPは0未満にならない。</li>
+            <li>HPが0になると「倒れた」の出来事が出て、残りの道のりは処理しない。</li>
+            <li>乱数を使わないので、同じ設定なら何度実行しても同じログになる。</li>
+          </ul>
+          <p>この章の完成条件は、<strong>入力した設定によってログが変わり、型チェック・起動・再実行ができる</strong>こと。</p>
+        </section>
+
+        <!-- 2. 出発点 -->
+        <section class="step" id="start">
+          <h2>出発点</h2>
+          <p>最初の章なので、前章の完成版はない。教材のリポジトリにある演習用コード（starter）から始める。必要なものは Node.js 24 以上、Git、テキストエディタの3つ。</p>
+          <figure class="code is-shell">
+            <figcaption>端末：教材を取得し、演習用コードを自分の作業場所に写す</figcaption>
+<pre><code>git clone https://github.com/aituber-akari/reading-rpg-course.git
+cp -r reading-rpg-course/examples/ch00/starter ~/reading-rpg
+cd ~/reading-rpg
+npm ci</code></pre>
+          </figure>
+          <p>写したフォルダには次のファイルがある。データは上から下へ流れる。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/domain/types.ts</code></td><td>型の定義：人物（<code>Agent</code>）、道のりの1手（<code>Step</code>）、出来事（<code>WorldEvent</code>）、変化（<code>Change</code>）</td></tr>
+                <tr><td><code>src/content/scenario.ts</code></td><td>冒険の設定：主人公、道のり、場所の名前。<strong>演習で書き換える</strong></td></tr>
+                <tr><td><code>src/adventure.ts</code></td><td>道のりを順に処理して、出来事の列を作る（<code>runAdventure</code>）</td></tr>
+                <tr><td><code>src/narration/format.ts</code></td><td>出来事を日本語の1行にする（<code>formatEvent</code>、<code>formatLog</code>）</td></tr>
+                <tr><td><code>src/main.ts</code></td><td>入口。上の3つを組み合わせて、ログを表示する</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="formula">設定（scenario.ts）→ runAdventure → 出来事の列（WorldEvent[]）→ formatLog → 文字列の列 → 画面</div>
+          <p>ゲームの「出来事」と、それを読む「文」を分けて持つのがこの教材の基本の形である。出来事はデータなので、テストで確かめたり、後の章で別の書き方のログにしたりできる。</p>
+        </section>
+
+        <!-- 3. 演習 -->
+        <section class="step" id="exercise">
+          <h2>演習</h2>
+          <p>動作例を見る → サンプルを改造する → 機能を自力で追加する → 完成版と照合する、の順に進める。文法の説明は、それを使う演習のすぐ前に置いた。</p>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 0-1 そのまま動かす</p>
+            <p>作業フォルダで次を実行し、<a href="#goal">今回作るもの</a>と同じ5行が出ることを確かめる。</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>npm start</code></pre>
+            </figure>
+            <p><code>npm start</code> は <code>package.json</code> に書いた <code>tsx src/main.ts</code> を実行する。<code>tsx</code> はTypeScriptのファイルを、変換の手間なしにそのまま実行する道具である。</p>
+          </div>
+
+          <div class="knowledge" id="k-values">
+            <p class="box-label">知識：値と変数（const／let）</p>
+            <p>値には数値（<code>12</code>）、文字列（<code>'リナ'</code>）、真偽値（<code>true</code>／<code>false</code>）などがある。名前を付けて値を持つには <code>const</code> を使う。あとで別の値を入れ直す変数だけ <code>let</code> にする。</p>
+            <figure class="code">
+<pre><code>const name = 'リナ';   // 文字列。入れ直せない
+let hp = 12;           // 数値。入れ直せる
+hp = hp - 3;           // hp は 9 になる
+const alive = hp &gt; 0;  // 真偽値 true</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge" id="k-object">
+            <p class="box-label">知識：オブジェクト・配列・型注釈</p>
+            <p>オブジェクトは <code>{ 名前: 値 }</code> の組、配列は <code>[値, 値, …]</code> の並び。<code>interface</code> で「どんな名前の値を持つか」を型として書いておくと、書き間違いを型チェックが見つける。人物の型は次のとおり。</p>
+            <!-- snippet:examples/ch00/solution/src/domain/types.ts#agent -->
+            <figure class="code">
+              <figcaption>src/domain/types.ts</figcaption>
+<pre><code>/** 人物。序章ではパラメータは hp だけを持つ。 */
+export interface Agent {
+  id: string;
+  name: string;
+  params: { hp: number };
+  location: string;
+}</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p><code>const hero: Agent = { … }</code> のように、変数名の後ろに <code>: 型</code> を書くのが型注釈である。<code>params</code> のようにオブジェクトの中にオブジェクトを入れることもできる。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 0-2 設定を変えて、ログを変える</p>
+            <p class="files">編集するファイル：<code>src/content/scenario.ts</code></p>
+            <p>主人公と道のりは次のように書いてある。名前、HP、敵の名前や強さ（<code>power</code>）を書き換えて、<code>npm start</code> を実行し直す。</p>
+            <!-- snippet:examples/ch00/starter/src/content/scenario.ts#hero -->
+            <figure class="code">
+              <figcaption>src/content/scenario.ts（主人公）</figcaption>
+<pre><code>/** 主人公。 */
+export const hero: Agent = {
+  id: 'lina',
+  name: 'リナ',
+  params: { hp: 12 },
+  location: 'village',
+};</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <!-- snippet:examples/ch00/starter/src/content/scenario.ts#steps -->
+            <figure class="code">
+              <figcaption>src/content/scenario.ts（道のり）</figcaption>
+<pre><code>/** 道のり。上から順に処理する。 */
+export const steps: Step[] = [
+  { kind: 'move', to: 'forest' },
+  { kind: 'encounter', enemy: { id: 'slime', name: 'スライム', power: 3 } },
+  { kind: 'move', to: 'cave-entrance' },
+  { kind: 'encounter', enemy: { id: 'bat', name: '大コウモリ', power: 4 } },
+  // 演習：ここに { kind: 'rest', amount: 3 } を加えると、休む手順を試せる。
+];</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <ol>
+              <li>名前を自分の好きな名前にする。ログの全行が変わることを確かめる。</li>
+              <li>HPを <code>6</code> にする。2回目の遭遇で倒れ、ログが6行になる（<a href="#check">動作確認</a>に期待ログがある）。</li>
+              <li>道のりの最後に、<code>{ kind: 'encounter', enemy: { id: 'goblin', name: 'ゴブリン', power: 5 } }</code> のような3体目の敵を加える。移動先には <code>placeNames</code> にある場所のID（<code>village</code>・<code>forest</code>・<code>cave-entrance</code>）を使うと、名前で表示される。</li>
+            </ol>
+            <p>型と違う値を書くと、<code>npm run typecheck</code> がエラーを出す。たとえば <code>hp: '12'</code>（文字列）と書いて確かめてみるとよい。</p>
+          </div>
+
+          <div class="knowledge" id="k-git">
+            <p class="box-label">知識：Gitのリポジトリ・コミット・差分</p>
+            <p>Gitはファイルの変更の履歴を記録する道具。履歴を記録する場所を<strong>リポジトリ</strong>、ある時点の状態を記録したものを<strong>コミット</strong>、2つの状態の違いを<strong>差分</strong>という。コミットする前に、記録したい変更を <code>git add</code> で選ぶ。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 0-3 最初のコミット</p>
+            <p>作業フォルダをGitのリポジトリにして、元の状態を記録する。<code>node_modules/</code> は <code>npm ci</code> で作り直せるので、記録しないよう <code>.gitignore</code> に書く。</p>
+            <figure class="code is-shell">
+              <figcaption>端末：演習 0-2 の変更をいったん元に戻してから行う</figcaption>
+<pre><code>echo "node_modules/" &gt; .gitignore
+git init
+git add .
+git commit -m "序章の演習用コードから始める"</code></pre>
+            </figure>
+            <p>次に、主人公の名前とHPを書き換えて、差分を見てからもう一度コミットする。</p>
+            <figure class="code is-shell">
+              <figcaption>端末</figcaption>
+<pre><code>git diff
+git add src/content/scenario.ts
+git commit -m "主人公の名前とHPを変える"
+git log --oneline</code></pre>
+            </figure>
+            <p><code>git diff</code> では、消した行が <code>-</code>、足した行が <code>+</code> で表示される。<code>git log --oneline</code> にコミットが2つ並べば完了。</p>
+          </div>
+
+          <div class="callout is-note">
+            <p class="box-label">注意</p>
+            <p><code>git commit</code> の前に、名前とメールアドレスの設定を求められることがある。表示された <code>git config --global user.name</code> と <code>user.email</code> のコマンドで設定する。GitHubで公開する予定があるなら、メールアドレスはGitHubの非公開用アドレスにしておくとよい。</p>
+          </div>
+
+          <div class="knowledge" id="k-control">
+            <p class="box-label">知識：if・for と「種類で分かれる型」</p>
+            <p>道のりの1手（<code>Step</code>）は、<code>kind</code> の値によって持つ情報が変わる。<code>|</code> でつないだこの型を判別共用体という。</p>
+            <!-- snippet:examples/ch00/solution/src/domain/types.ts#step -->
+            <figure class="code">
+              <figcaption>src/domain/types.ts</figcaption>
+<pre><code>/** 冒険の道のりの1手。 */
+export type Step =
+  | { kind: 'move'; to: string }
+  | { kind: 'encounter'; enemy: { id: string; name: string; power: number } }
+  | { kind: 'rest'; amount: number };</code></pre>
+            </figure>
+            <!-- /snippet -->
+            <p><code>for (const step of steps)</code> で配列を先頭から1つずつ取り出し、<code>if (step.kind === 'move')</code> で種類を調べる。<code>if</code> の中では、TypeScriptが <code>step</code> を <code>move</code> の形だと分かっているので、<code>step.to</code> が使える。どれにも当たらなかった最後の <code>else</code> では、残りの種類（<code>rest</code>）だけが来る。</p>
+            <figure class="code">
+<pre><code>for (const step of steps) {
+  if (step.kind === 'move') {
+    // ここでは step.to が使える
+  } else if (step.kind === 'encounter') {
+    // ここでは step.enemy が使える
+  } else {
+    // ここに来るのは rest だけ。step.amount が使える
+  }
+}</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge" id="k-function">
+            <p class="box-label">知識：関数と、元を書き換えない更新</p>
+            <p>関数は引数を受け取り、値を返す。引数と戻り値にも型を書く。</p>
+            <figure class="code">
+<pre><code>function heal(hp: number, amount: number): number {
+  return hp + amount;
+}
+heal(5, 3); // 8</code></pre>
+            </figure>
+            <p><code>runAdventure</code> は、受け取った主人公を書き換えずに新しいオブジェクトを作る。<code>{ ...current, params: { ...current.params, hp: after } }</code> は「<code>current</code> の中身を写し、<code>params</code> の <code>hp</code> だけ差し替えた新しいオブジェクト」という意味である（<code>...</code> はスプレッド構文）。元のデータが変わらないので、テストで前と後を比べやすい。</p>
+          </div>
+
+          <div class="exercise">
+            <p class="box-label"><span class="tag">必須</span>演習 0-4 「休む」手順を足す</p>
+            <p class="files">編集するファイル：<code>src/adventure.ts</code>、<code>src/narration/format.ts</code> の <code>TODO</code>（と、試すときは <code>src/content/scenario.ts</code>）</p>
+            <p>型 <code>Step</code> にはすでに <code>{ kind: 'rest'; amount: number }</code> がある。けれども今は、休んでも何も起きず、ログには「（未実装：休む）」と出る。次の2つを実装する。</p>
+            <ol>
+              <li><code>runAdventure</code> の最後の <code>else</code>：HPを <code>step.amount</code> だけ増やし、<code>action: 'rest'</code> の出来事を出す。HPの変化（<code>Change</code>）も記録する。すぐ上の遭遇（<code>encounter</code>）の処理がよい手本になる。</li>
+              <li><code>formatEvent</code> の <code>rest</code>：「休んだ」を含む文を作る。<code>hpText(e)</code> で「HP 9→12」の文字列が得られる。</li>
+            </ol>
+            <figure class="code is-shell">
+              <figcaption>端末：演習用のテストで確かめる</figcaption>
+<pre><code>npm run test:exercises</code></pre>
+            </figure>
+            <p>テストが通ったら、<code>scenario.ts</code> の道のりの、スライムとの遭遇の後に <code>{ kind: 'rest', amount: 3 }</code> を加えて、ログで確かめる（<a href="#check">動作確認</a>）。最後にコミットする。</p>
+            <details>
+              <summary>完成版の実装を見る</summary>
+              <!-- snippet:examples/ch00/solution/src/adventure.ts#rest -->
+              <figure class="code">
+                <figcaption>src/adventure.ts（runAdventure の rest の分岐）</figcaption>
+<pre><code>const before = current.params.hp;
+const after = before + step.amount;
+current = { ...current, params: { ...current.params, hp: after } };
+events.push({
+  t: t++,
+  type: 'action',
+  actor: current.id,
+  action: 'rest',
+  place: current.location,
+  changes: [hpChange(current.id, before, after)],
+});</code></pre>
+              </figure>
+              <!-- /snippet -->
+              <!-- snippet:examples/ch00/solution/src/narration/format.ts#formatEvent -->
+              <figure class="code">
+                <figcaption>src/narration/format.ts（formatEvent 全体）</figcaption>
+<pre><code>/** 出来事を1行の文にする。 */
+export function formatEvent(e: WorldEvent, names: Record&lt;string, string&gt;): string {
+  const who = nameOf(e.actor, names);
+  const where = nameOf(e.place, names);
+  let text: string;
+  switch (e.type) {
+    case 'action':
+      if (e.action === 'depart') {
+        const hp = e.changes?.[0];
+        text = `${who}は${where}を出発した。` + (hp ? `（HP ${hp.after}）` : '');
+      } else if (e.action === 'move') {
+        text = `${who}は${where}へ移動した。`;
+      } else if (e.action === 'rest') {
+        text = `${who}はひと息ついて休んだ。 ${hpText(e)}`;
+      } else {
+        text = `${who}は何かをした。`;
+      }
+      break;
+    case 'encounter':
+      text = `${who}は${nameOf(e.target, names)}に遭遇した！ ${hpText(e)}`;
+      break;
+    case 'defeated':
+      text = `${who}は力尽きて倒れた……。冒険はここで終わった。`;
+      break;
+  }
+  return `[${e.t}] ${text}`;
+}</code></pre>
+              </figure>
+              <!-- /snippet -->
+            </details>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 0-A 休んでも最大HPを超えない</p>
+            <p>今の「休む」は、HPをいくらでも増やせる。人物に最大HP（例：<code>maxHp</code>）を持たせ、休んでもそれを超えないようにする。<code>Agent</code> の型、<code>hero</code> の設定、<code>runAdventure</code> の3か所を変えることになる。第1章では、人物が実際に <code>maxHp</code> を持つ。完成版には含まれない。</p>
+          </div>
+
+          <div class="exercise is-advanced">
+            <p class="box-label"><span class="tag">発展</span>演習 0-B 新しい種類の手順</p>
+            <p>たとえば「宝箱を開ける」のような新しい手順を <code>Step</code> に加える。型に1行足すと、<code>runAdventure</code> の <code>if</code> の分岐がどこで足りなくなるかを、型チェックがどう知らせるか観察する。完成版には含まれない。</p>
+          </div>
+        </section>
+
+        <!-- 4. 必要な知識 -->
+        <section class="step" id="knowledge">
+          <h2>必要な知識</h2>
+          <p>この章の文法は、演習のそばに置いた。ここではその一覧と、ファイルをまたぐ仕組みをまとめる。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>項目</th><th>使う場所</th><th>説明</th></tr></thead>
+              <tbody>
+                <tr><td><code>const</code>／<code>let</code>、数値・文字列・真偽値</td><td>どこでも</td><td><a href="#k-values">値と変数</a></td></tr>
+                <tr><td>オブジェクト・配列・<code>interface</code>・型注釈</td><td><code>scenario.ts</code>、<code>types.ts</code></td><td><a href="#k-object">オブジェクト・配列・型注釈</a></td></tr>
+                <tr><td><code>type</code>・判別共用体・<code>if</code>・<code>for</code></td><td><code>adventure.ts</code></td><td><a href="#k-control">if・for と種類で分かれる型</a></td></tr>
+                <tr><td>関数・スプレッド構文</td><td><code>adventure.ts</code>、<code>format.ts</code></td><td><a href="#k-function">関数と元を書き換えない更新</a></td></tr>
+                <tr><td>リポジトリ・コミット・差分</td><td>端末</td><td><a href="#k-git">Gitの基本</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">モジュール：import と export</p>
+            <p>1つのファイルが1つのモジュールである。他のファイルから使わせたいものに <code>export</code> を付け、使う側は <code>import</code> で読み込む。型だけを読み込むときは <code>import type</code> と書く。プログラムの入口は <code>src/main.ts</code> で、ここだけが画面への表示（<code>console.log</code>）を行う。</p>
+            <figure class="code">
+              <figcaption>src/main.ts（冒頭）</figcaption>
+<pre><code>import { runAdventure } from './adventure';
+import { hero, namesOf, steps } from './content/scenario';
+import { formatLog } from './narration/format';</code></pre>
+            </figure>
+          </div>
+
+          <div class="knowledge">
+            <p class="box-label">型チェックと実行は別のもの</p>
+            <p><code>npm start</code>（<code>tsx</code>）は型を確かめずに実行する。型の誤りを見つけるのは <code>npm run typecheck</code>（<code>tsc --noEmit</code>）の役目である。<code>npm run check</code> は型チェックとテストを続けて行う。</p>
+          </div>
+        </section>
+
+        <!-- 文献コラム -->
+        <aside class="literature" id="column" aria-labelledby="column-title">
+          <p class="box-label">文献コラム</p>
+          <h3 id="column-title">ログという「物」を、読み手が読む</h3>
+          <p>Pinchbeck（2009）は、ゲームの中の物を、遊びを進めるもの（ゲームプレイ系）と、物語世界を支えたり筋の理解を進めたりするもの（物語系）とに分けて整理した。読むRPGの読み手は人物を操作しない。読み手の手元にあるのはログだけであり、ログの1行1行が、読み手に解釈を促す物語系の「物」として働く。</p>
+          <div class="mapping-head" aria-hidden="true"><span>理論の概念</span><span>この章の実装</span></div>
+          <dl class="mapping">
+            <div><dt>パラメータを持つ物</dt><dd>人物 <code>Agent</code> の <code>params: { hp }</code>。人物も「数値を持つ物」として書き始める</dd></div>
+            <div><dt>出来事の記録</dt><dd><code>WorldEvent</code> と <code>Change</code>（HPの前と後）。ログはここから作る</dd></div>
+            <div><dt>物語系の物（story object）</dt><dd><code>formatLog</code> が作るログの1行。「HP 12→9」の数字と短い文から、読み手がその間の出来事を想像する</dd></div>
+          </dl>
+          <p>出来事（データ）と文（叙述）を分けておくと、同じ出来事の列を別の書き方で読ませられる。第4章では、同じ出来事から詳細ログと簡潔ログを作り、読み手が受け取る物語の違いを観察する。</p>
+          <p class="ref">参考：Pinchbeck, D. (2009). An affordance based model for gameplay. <i>Proceedings of DiGRA 2009</i>.　詳しくは<a href="../references/affordance.html#narrative">設計思想：アフォーダンス</a>。</p>
+        </aside>
+
+        <!-- 5. 動作確認 -->
+        <section class="step" id="check">
+          <h2>動作確認</h2>
+          <ol>
+            <li><code>npm start</code> を2回実行し、まったく同じログが出ることを確かめる。</li>
+            <li><code>scenario.ts</code> の HP を <code>6</code> にして実行する。</li>
+            <li>HP を <code>12</code> に戻し、スライムとの遭遇の後に <code>{ kind: 'rest', amount: 3 }</code> を加えて実行する（演習 0-4 の後）。</li>
+          </ol>
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>手順2：HP 6 の場合</small></figcaption>
+<pre>[1] リナは村を出発した。（HP 6）
+[2] リナは森へ移動した。
+[3] リナはスライムに遭遇した！ HP 6→3
+[4] リナは洞窟の入口へ移動した。
+[5] リナは大コウモリに遭遇した！ HP 3→0
+[6] リナは力尽きて倒れた……。冒険はここで終わった。</pre>
+          </figure>
+          <figure class="game-log">
+            <figcaption>冒険の記録 <small>手順3：休んだ場合</small></figcaption>
+<pre>[1] リナは村を出発した。（HP 12）
+[2] リナは森へ移動した。
+[3] リナはスライムに遭遇した！ HP 12→9
+[4] リナはひと息ついて休んだ。 HP 9→12
+[5] リナは洞窟の入口へ移動した。
+[6] リナは大コウモリに遭遇した！ HP 12→8</pre>
+          </figure>
+          <p>確認する観点：</p>
+          <ul>
+            <li>設定を変えると、ログが変わる。変えなければ、何度でも同じログになる。</li>
+            <li>倒れた後の道のりは処理されない。</li>
+            <li>「休む」の文の文面は自分の書いたものでよい。「休んだ」を含み、HPの変化が表示されていればよい。</li>
+          </ul>
+        </section>
+
+        <!-- 6. テスト -->
+        <section class="step" id="test">
+          <h2>テスト</h2>
+          <figure class="code is-shell">
+            <figcaption>端末</figcaption>
+<pre><code>npm test                # 既定のテスト（starter でも通る）
+npm run test:exercises  # 演習用テスト（演習 0-4 を解くまで失敗する）
+npm run check           # 型チェック → テスト</code></pre>
+          </figure>
+          <p>テストは Vitest で書いてあり、<code>tests/adventure.test.ts</code> に次の項目がある。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>前提（Given）</th><th>期待（Then）</th></tr></thead>
+              <tbody>
+                <tr><td>主人公の名前が「リナ」</td><td>ログの1行目に「リナ」と「出発」が含まれる</td></tr>
+                <tr><td>既定の道のり</td><td>出来事の種類が action, action, encounter, action, encounter の順に並び、ログが設計どおりの5行になる</td></tr>
+                <tr><td>HP 6</td><td>2回目の遭遇で HP 3→0 となり、「倒れた」の後に出来事はない</td></tr>
+                <tr><td>遭遇のダメージがHPを上回る</td><td>HPは0未満にならない</td></tr>
+                <tr><td>名前とHPが異なる2つの設定</td><td>ログが異なる（完成条件）</td></tr>
+                <tr><td>任意の設定で実行</td><td>引数に渡した主人公のHPは変わらない</td></tr>
+                <tr><td>演習：HP 5 で <code>rest</code>（amount 3）</td><td>HP 5→8 の変化が記録され、ログに「休んだ」が含まれる</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 7. 完成版コード -->
+        <section class="step" id="solution">
+          <h2>完成版コード</h2>
+          <p>序章の最終状態は <a href="https://github.com/aituber-akari/reading-rpg-course/tree/main/examples/ch00/solution">examples/ch00/solution</a> にある。<code>npm ci</code> と <code>npm start</code> で起動できる。演習 0-4 の解答は、<code>runAdventure</code> の <code>rest</code> の分岐と、<code>formatEvent</code> の <code>rest</code> の文である。</p>
+          <p>主要なファイルの読みどころ：</p>
+          <ul>
+            <li><code>src/adventure.ts</code>：序章では、規則（何が起きるか）と進行（順に処理する）の役割を1つのファイルが持つ。第1章で <code>src/sim/</code> に移し、規則は <code>src/rules/</code> に分ける。</li>
+            <li><code>src/narration/format.ts</code>：叙述は出来事と名前の対応表だけから作り、ゲームの進行には関わらない。</li>
+            <li><code>src/content/scenario.ts</code>：データだけを置く。ゲームを変えたいときは、まずここを書き換える。</li>
+          </ul>
+          <!-- snippet:examples/ch00/solution/src/adventure.ts#runAdventure -->
+          <figure class="code">
+            <figcaption>src/adventure.ts（runAdventure 全体）</figcaption>
+<pre><code>/**
+ * 道のりを順に処理し、出来事の列を返す。
+ * 引数の hero は書き換えず、新しいオブジェクトを返す。
+ */
+export function runAdventure(hero: Agent, steps: Step[]): { hero: Agent; events: WorldEvent[] } {
+  let current: Agent = { ...hero, params: { ...hero.params } };
+  const events: WorldEvent[] = [];
+  let t = 1;
+
+  // 最初に出発の出来事を出す。出発時の HP を記録しておく（変化はしない）。
+  const hp0 = current.params.hp;
+  events.push({
+    t: t++,
+    type: 'action',
+    actor: current.id,
+    action: 'depart',
+    place: current.location,
+    changes: [{ entity: current.id, field: 'param', key: 'hp', before: hp0, after: hp0 }],
+  });
+
+  for (const step of steps) {
+    if (step.kind === 'move') {
+      current = { ...current, location: step.to };
+      events.push({ t: t++, type: 'action', actor: current.id, action: 'move', place: step.to });
+    } else if (step.kind === 'encounter') {
+      const before = current.params.hp;
+      const after = Math.max(0, before - step.enemy.power);
+      current = { ...current, params: { ...current.params, hp: after } };
+      events.push({
+        t: t++,
+        type: 'encounter',
+        actor: current.id,
+        target: step.enemy.id,
+        place: current.location,
+        changes: [hpChange(current.id, before, after)],
+      });
+    } else {
+      const before = current.params.hp;
+      const after = before + step.amount;
+      current = { ...current, params: { ...current.params, hp: after } };
+      events.push({
+        t: t++,
+        type: 'action',
+        actor: current.id,
+        action: 'rest',
+        place: current.location,
+        changes: [hpChange(current.id, before, after)],
+      });
+    }
+
+    if (current.params.hp &lt;= 0) {
+      events.push({ t: t++, type: 'defeated', actor: current.id, place: current.location });
+      break; // 倒れたら、残りの手順は処理しない
+    }
+  }
+
+  return { hero: current, events };
+}</code></pre>
+          </figure>
+          <!-- /snippet -->
+        </section>
+
+        <!-- 8. 振り返り -->
+        <section class="step" id="review">
+          <h2>振り返り</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ゲーム上の機能</th><th>習得した技術</th></tr></thead>
+              <tbody>
+                <tr><td>主人公と道のりの設定</td><td>オブジェクト、配列、<code>interface</code>、型注釈</td></tr>
+                <tr><td>移動・遭遇・休むの処理</td><td><code>for</code>、<code>if</code>、判別共用体</td></tr>
+                <tr><td>倒れたら冒険が終わる</td><td>条件と <code>break</code></td></tr>
+                <tr><td>出来事からログを作る</td><td>関数、テンプレート文字列、データと表示の分離</td></tr>
+                <tr><td>同じ設定なら同じログ</td><td>元を書き換えない更新、テスト</td></tr>
+                <tr><td>設定の変更を記録する</td><td>Gitのリポジトリ、コミット、差分</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>次の章では、この人物にHP以外の数値（攻撃力・防御力・素早さ）と「生きている／倒れた」の状態を持たせ、行動を選ぶ戦闘を作る。</p>
+        </section>
+
+      </div>
+
+      <nav class="pager" aria-label="前後の章">
+        <a class="prev" href="../index.html" rel="prev"><span class="dir">← 戻る</span>トップページ</a>
+        <a class="next" href="ch01.html" rel="next"><span class="dir">次の章 →</span>第1章 戦闘する冒険者</a>
+      </nav>
+      <p class="pager-hint"><kbd>←</kbd> <kbd>→</kbd> キーでも前後の章へ移動できます</p>
+
+    </article>
+  </main>
+</div>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

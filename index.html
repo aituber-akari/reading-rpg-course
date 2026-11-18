@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>読むRPGで学ぶソフトウェア開発</title>
+  <meta name="description" content="数字と短いログから冒険を想像する「読むRPG」を作りながら、TypeScript、アルゴリズム、Web、Git、テスト、CI/CDを学ぶ教材。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="assets/course.css">
+  <script src="assets/course.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+
+<header class="site-header">
+  <a class="site-title" href="index.html" aria-current="page">読む<span>RPG</span>で学ぶソフトウェア開発</a>
+</header>
+
+<main id="main">
+  <div class="prose">
+
+    <section class="hero">
+      <p class="eyebrow">序章＋全4部・16章</p>
+      <h1><span class="nobr">「読むRPG」を</span><span class="nobr">作りながら</span><br><span class="nobr">ソフトウェア開発を</span><span class="nobr">学ぶ</span></h1>
+      <p class="lead">数字と短い日本語のログを読んで、冒険を想像するゲームを作る。一瞬の行動、キャラクターの人生、世界の歴史という三つのスケールを順に組み立て、最後にWebアプリとして公開する。</p>
+
+      <!-- output:ch00 -->
+      <figure class="game-log">
+        <figcaption>冒険の記録 <small>序章で最初に動かすログ</small></figcaption>
+<pre>[1] リナは村を出発した。（HP 12）
+[2] リナは森へ移動した。
+[3] リナはスライムに遭遇した！ HP 12→9
+[4] リナは洞窟の入口へ移動した。
+[5] リナは大コウモリに遭遇した！ HP 9→5</pre>
+      </figure>
+      <!-- /output -->
+    </section>
+
+    <h2>学び方</h2>
+    <p>各章は「何を作れるようになるか」から始まる。文法やアルゴリズムは、作業で必要になったところで短く説明する。</p>
+    <ol class="steps">
+      <li>動作例を見る</li>
+      <li>サンプルを改造する</li>
+      <li>機能を自力で追加する</li>
+      <li>完成版と照合する</li>
+    </ol>
+    <p>各章には、必ず取り組む<strong>必須演習</strong>と、興味に応じて試す<strong>発展課題</strong>がある。章ごとの完成版コードはいつでも読める。</p>
+
+    <a class="feature-card" href="references/affordance.html">
+      <p class="box-label">設計思想</p>
+      <h2>アフォーダンス</h2>
+      <p>キャラクターの技能・持ち物と、環境が提供する行為の可能性の組合せから、取れる行動が決まる。この教材のゲームの設計を支える考え方と、各章の実装との対応をまとめる。</p>
+      <span class="more">設計思想を読む →</span>
+    </a>
+
+    <h2 id="contents">目次</h2>
+    <p>いま公開しているのは序章〜第3章。ほかの章は準備中。</p>
+
+    <section class="part" aria-labelledby="part0">
+      <div class="part-head"><span class="part-no">序章</span><h3 id="part0">最初の冒険を動かす</h3></div>
+      <p class="part-goal">完成物：最小限のログRPG</p>
+      <ol class="chapter-list">
+        <li><a href="chapters/ch00.html"><span class="no">序章</span><span class="title">最初の冒険を動かす</span><span class="badge is-ready">公開中</span></a></li>
+      </ol>
+    </section>
+
+    <section class="part" aria-labelledby="part1">
+      <div class="part-head"><span class="part-no">第1部</span><h3 id="part1">一瞬の行動</h3></div>
+      <p class="part-goal">完成物：状況に応じて行動・問題解決を行うシミュレータ</p>
+      <ol class="chapter-list">
+        <li><a href="parts/part1.html"><span class="no">概要</span><span class="title">第1部の成果物と学ぶ内容</span><span class="badge is-ready">公開中</span></a></li>
+        <li><a href="chapters/ch01.html"><span class="no">第1章</span><span class="title">戦闘する冒険者</span><span class="badge is-ready">公開中</span></a></li>
+        <li><a href="chapters/ch02.html"><span class="no">第2章</span><span class="title">障害を乗り越える</span><span class="badge is-ready">公開中</span></a></li>
+        <li><a href="chapters/ch03.html"><span class="no">第3章</span><span class="title">機転を利かせる</span><span class="badge is-ready">公開中</span></a></li>
+        <li><span class="is-pending"><span class="no">第4章</span><span class="title">行動を読ませる</span><span class="badge is-wait">準備中</span></span></li>
+      </ol>
+    </section>
+
+    <section class="part" aria-labelledby="part2">
+      <div class="part-head"><span class="part-no">第2部</span><h3 id="part2">キャラクターの人生</h3></div>
+      <p class="part-goal">完成物：目的・記憶・成長を持つ人物の人生シミュレータ</p>
+      <ol class="chapter-list">
+        <li><span class="is-pending"><span class="no">第5章</span><span class="title">意志を持つ冒険者</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第6章</span><span class="title">記憶する冒険者</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第7章</span><span class="title">成長する冒険者</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第8章</span><span class="title">一人の人生</span><span class="badge is-wait">準備中</span></span></li>
+      </ol>
+    </section>
+
+    <section class="part" aria-labelledby="part3">
+      <div class="part-head"><span class="part-no">第3部</span><h3 id="part3">世界の歴史</h3></div>
+      <p class="part-goal">完成物：複数人物と出来事が蓄積する世界シミュレータ</p>
+      <ol class="chapter-list">
+        <li><span class="is-pending"><span class="no">第9章</span><span class="title">世界を生成する</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第10章</span><span class="title">世界に人を住まわせる</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第11章</span><span class="title">世界を変化させる</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第12章</span><span class="title">歴史を記録する</span><span class="badge is-wait">準備中</span></span></li>
+      </ol>
+    </section>
+
+    <section class="part" aria-labelledby="part4">
+      <div class="part-head"><span class="part-no">第4部</span><h3 id="part4">読むRPGへ統合</h3></div>
+      <p class="part-goal">完成物：保存・閲覧・公開ができるWebアプリMVP</p>
+      <ol class="chapter-list">
+        <li><span class="is-pending"><span class="no">第13章</span><span class="title">ゲーム画面を作る</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第14章</span><span class="title">世界を保存する</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第15章</span><span class="title">時間を進める</span><span class="badge is-wait">準備中</span></span></li>
+        <li><span class="is-pending"><span class="no">第16章</span><span class="title">公開する</span><span class="badge is-wait">準備中</span></span></li>
+      </ol>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">読むRPGで学ぶソフトウェア開発</footer>
+</body>
+</html>

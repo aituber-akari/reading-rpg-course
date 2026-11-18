@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`演習2：A* を実装する > A* の展開ノード数は、記録した値（スナップショット）と一致する 1`] = `
+[
+  {
+    "astar": 11,
+    "astarW3": 4,
+    "climb": 3,
+    "stamina": 20,
+  },
+  {
+    "astar": 11,
+    "astarW3": 4,
+    "climb": 2,
+    "stamina": 20,
+  },
+  {
+    "astar": 11,
+    "astarW3": 8,
+    "climb": 1,
+    "stamina": 20,
+  },
+]
+`;

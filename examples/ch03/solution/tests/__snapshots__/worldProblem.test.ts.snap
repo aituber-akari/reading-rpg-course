@@ -1,0 +1,36 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`崖の谷を探索問題にする > BFS とダイクストラ法の展開ノード数は、記録した値（スナップショット）と一致する 1`] = `
+[
+  {
+    "bfs": 9,
+    "climb": 3,
+    "dijkstra": 18,
+    "stamina": 20,
+  },
+  {
+    "bfs": 14,
+    "climb": 2,
+    "dijkstra": 18,
+    "stamina": 20,
+  },
+  {
+    "bfs": 19,
+    "climb": 1,
+    "dijkstra": 18,
+    "stamina": 20,
+  },
+  {
+    "bfs": 14,
+    "climb": 3,
+    "dijkstra": 18,
+    "stamina": 10,
+  },
+  {
+    "bfs": 18,
+    "climb": 3,
+    "dijkstra": 18,
+    "stamina": 6,
+  },
+]
+`;
